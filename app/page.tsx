@@ -1,4 +1,4 @@
-import BugBrawler from "@/components/game/BugBrawler";
+import BugBrawler from "@/components/bug-brawler/BugBrawler";
 
 export default function Home() {
   return <BugBrawler />;

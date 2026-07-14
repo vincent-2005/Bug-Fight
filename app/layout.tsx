@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "../components/game/BugBrawler.css";
+import "../components/bug-brawler/BugBrawler.css";
 
 export const metadata: Metadata = {
   title: "Bug Brawler",
