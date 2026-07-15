@@ -1,5 +1,48 @@
 import Link from "next/link";
 
+const games = [
+  {
+    href: "/mini-games/shooting-range",
+    title: "Shooting Range",
+    text: "Hit moving targets and stack cash with rapid-fire precision.",
+  },
+  {
+    href: "/mini-games/blackjack",
+    title: "Blackjack",
+    text: "Beat the dealer with a strong hand and a lucky draw.",
+  },
+  {
+    href: "/mini-games/trivia-quiz",
+    title: "Trivia Quiz",
+    text: "Answer quick questions and cash in for a solid streak.",
+  },
+  {
+    href: "/mini-games/bubble-burst",
+    title: "Bubble Burst",
+    text: "Pop every bubble before the clock runs out.",
+  },
+  {
+    href: "/mini-games/maze-run",
+    title: "Maze Run",
+    text: "Guide the character through the maze and reach the exit.",
+  },
+  {
+    href: "/mini-games/coin-collector",
+    title: "Coin Collector",
+    text: "Race around the arena and scoop glowing coins before the round ends.",
+  },
+  {
+    href: "/mini-games/color-match",
+    title: "Color Match",
+    text: "Find the matching tiles as fast as you can before time runs out.",
+  },
+  {
+    href: "/mini-games/dodge-dash",
+    title: "Dodge Dash",
+    text: "Survive the falling blocks and stay alive for the full timer.",
+  },
+];
+
 export default function MiniGamesPage() {
   return (
     <main style={styles.page}>
@@ -8,14 +51,12 @@ export default function MiniGamesPage() {
         <h1 style={styles.title}>Choose a mini-game</h1>
         <p style={styles.subtitle}>Pick a challenge to earn cash for upgrades.</p>
         <div style={styles.grid}>
-          <Link href="/mini-games/shooting-range" style={styles.tile}>
-            <h2 style={styles.tileTitle}>Shooting Range</h2>
-            <p style={styles.tileText}>Hit the moving targets and stack up cash.</p>
-          </Link>
-          <Link href="/mini-games/obby" style={styles.tile}>
-            <h2 style={styles.tileTitle}>Obby Challenge</h2>
-            <p style={styles.tileText}>Complete the course and unlock bonus rewards.</p>
-          </Link>
+          {games.map((game) => (
+            <Link key={game.title} href={game.href} style={styles.tile}>
+              <h2 style={styles.tileTitle}>{game.title}</h2>
+              <p style={styles.tileText}>{game.text}</p>
+            </Link>
+          ))}
         </div>
         <Link href="/" style={styles.backLink}>← Back to hub</Link>
       </div>
