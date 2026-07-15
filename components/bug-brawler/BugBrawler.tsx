@@ -229,8 +229,8 @@ export default function Home() {
           }
           // Empty slots
           const info = slot && !emptySlot ? toolbarIcons[slot.kind] : null;
-          const slotLabels = ["Shield", "Med Kit", "Crate", "Crate", "Crate"];
-          const slotIcons = ["🛡", "✚", "📦", "📦", "📦"];
+          const slotLabels = ["", "Shield", "Med Kit", "Crate", "Crate", "Crate"];
+          const slotIcons = ["", "🛡", "✚", "📦", "📦", "📦"];
           return <button key={i} className={`tb-item ${isActive?"active":""} ${emptySlot?"empty":""}`} onClick={() => useToolbarItem(i)} title={slot && !emptySlot ? `${slot.kind.toUpperCase()} (${slot.count})` : `Slot ${i+1}`}>
             <kbd className="tb-key">{i + 1}</kbd>
             {slot && !emptySlot ? <>
