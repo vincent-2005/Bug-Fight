@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import type { CSSProperties } from "react";
 import { usePlayerProgress } from "./progress";
 
 type LeaderboardEntry = {
@@ -17,9 +18,9 @@ const baseLeaderboard: LeaderboardEntry[] = [
 ];
 
 export default function HomeHub() {
-  const [money, setMoney] = useState(140);
-  const [weaponLevel, setWeaponLevel] = useState(1);
-  const [armorLevel, setArmorLevel] = useState(1);
+  const { progress, setProgress } = usePlayerProgress();
+  const { money, weaponLevel, armorLevel } = progress;
+
   const leaderboard = useMemo(() => {
     const playerScore = 1200 + weaponLevel * 180 + armorLevel * 140;
     return [...baseLeaderboard, { name: "You", score: playerScore, rank: 4 }]
@@ -124,7 +125,7 @@ export default function HomeHub() {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
     padding: "24px",
@@ -277,39 +278,5 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#fff",
     fontWeight: 700,
     cursor: "pointer",
-  },
-  targetGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 10,
-    marginTop: 10,
-  },
-  targetButton: {
-    padding: "14px 10px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.15)",
-    background: "linear-gradient(140deg, #244b6f, #0d2338)",
-    color: "#fff",
-    cursor: "pointer",
-    fontWeight: 700,
-  },
-  emptyState: {
-    padding: 16,
-    borderRadius: 12,
-    background: "rgba(85, 255, 170, 0.16)",
-    color: "#96ffbe",
-    textAlign: "center",
-  },
-  obbyBar: {
-    height: 10,
-    background: "rgba(255,255,255,0.08)",
-    borderRadius: 999,
-    overflow: "hidden",
-    margin: "12px 0",
-  },
-  obbyFill: {
-    height: "100%",
-    background: "linear-gradient(90deg, #ffcc4d, #ff6b57)",
-    transition: "width 0.2s ease",
   },
 };

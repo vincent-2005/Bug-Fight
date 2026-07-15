@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { usePlayerProgress } from "@/components/bug-brawler/progress";
 
 const checkpoints = [20, 40, 60, 80, 100];
@@ -48,6 +49,8 @@ export default function ObbyPage() {
         <div style={styles.statsRow}>
           <div style={styles.statBox}><strong>{progress}%</strong><span>Progress</span></div>
           <div style={styles.statBox}><strong>${playerProgress.money}</strong><span>Wallet</span></div>
+          <div style={styles.statBox}><strong>{wins}</strong><span>Wins</span></div>
+        </div>
 
         <div style={styles.course}>
           {checkpoints.map((checkpoint) => (
@@ -68,7 +71,7 @@ export default function ObbyPage() {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
     display: "grid",
