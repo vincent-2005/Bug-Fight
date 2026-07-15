@@ -9,7 +9,8 @@ type Bullet = { x: number; y: number; dx: number; dy: number; life: number; dama
 type Effect = { x: number; y: number; life: number; max: number; weapon: string };
 type PickupKind = "supply" | "medic" | "shield" | "overdrive" | "burst" | "dash";
 type Pickup = { x: number; y: number; claimed: boolean; kind: PickupKind; pulse: number };
-type Game = { player: { x: number; y: number; hp: number; cash: number; weapon: string; ammo: number; cooldown: number; hurt: number; shield: number; boost: number; speedBurst: number; rapidFire: number; webbed: number }; enemies: Enemy[]; bullets: Bullet[]; effects: Effect[]; pickups: Pickup[]; wave: number; map: number; clock: number; spawn: number; spawned: number; status: "playing" | "shop" | "won" | "lost"; notice: string; };
+type ToolbarSlot = { kind: "shield" | "medkit" | "overdrive" | "burst" | "dash"; count: number } | null;
+type Game = { player: { x: number; y: number; hp: number; cash: number; weapon: string; ammo: number; cooldown: number; hurt: number; shield: number; boost: number; speedBurst: number; rapidFire: number; webbed: number }; enemies: Enemy[]; bullets: Bullet[]; effects: Effect[]; pickups: Pickup[]; wave: number; map: number; clock: number; spawn: number; spawned: number; status: "playing" | "shop" | "won" | "lost"; notice: string; toolbar: ToolbarSlot[]; activeSlot: number; };
 
 const maps = [
   { name: "OVERGROWN GARDEN", desc: "Tall grass slows every step", a: "#234d37", b: "#112b2a" },
@@ -58,12 +59,55 @@ const pickupsFor = (map: number): Pickup[] => Array.from({ length: 6 }, (_, i) =
 const cameraFor = (x: number, y: number) => ({ x: Math.max(0, Math.min(WORLD_W - W, x - W / 2)), y: Math.max(0, Math.min(WORLD_H - H, y - H / 2)) });
 const terrainSlow = (x: number, y: number, map: number) => ((Math.floor(x / 170) * 13 + Math.floor(y / 150) * 7 + map * 11) % 9 === 0 ? .62 : 1);
 const ammoFor = (weapon: string) => weapon === "zapper" ? 45 : weapon === "sprayer" ? 70 : weapon === "flame" ? 85 : weapon === "net" ? 20 : weapon === "grenade" ? 16 : weapon === "shotgun" ? 30 : weapon === "horn" ? 12 : weapon === "needle" ? 50 : weapon === "cryo" ? 24 : weapon === "acid" ? 22 : weapon === "pulse" ? 40 : weapon === "whip" ? -1 : weapon === "launcher" ? 18 : weapon === "laser" ? 36 : weapon === "twinblades" ? -1 : -1;
-const initial = (): Game => ({ player: { x: WORLD_W / 2, y: WORLD_H / 2, hp: 100, cash: 80, weapon: "newspaper", ammo: -1, cooldown: 0, hurt: 0, shield: 0, boost: 0, speedBurst: 0, rapidFire: 0, webbed: 0 }, enemies: [], bullets: [], effects: [], pickups: pickupsFor(0), wave: 1, map: 0, clock: 0, spawn: 20, spawned: 0, status: "playing", notice: "WAVE 1 · CLEAR THE GARDEN" });
+const initial = (): Game => ({ player: { x: WORLD_W / 2, y: WORLD_H / 2, hp: 100, cash: 80, weapon: "newspaper", ammo: -1, cooldown: 0, hurt: 0, shield: 0, boost: 0, speedBurst: 0, rapidFire: 0, webbed: 0 }, enemies: [], bullets: [], effects: [], pickups: pickupsFor(0), wave: 1, map: 0, clock: 0, spawn: 20, spawned: 0, status: "playing", notice: "WAVE 1 · CLEAR THE GARDEN", toolbar: [null, null, null, null, null, null], activeSlot: 0 });
+
+const toolbarIcons: Record<string, { icon: string; label: string; color: string }> = {
+  shield: { icon: "🛡", label: "Shield", color: "#78d4ff" },
+  medkit: { icon: "✚", label: "Med Kit", color: "#ff8f7b" },
+  overdrive: { icon: "⚡", label: "Overdrive", color: "#ffc860" },
+  burst: { icon: "🔥", label: "Burst", color: "#ffe594" },
+  dash: { icon: "💨", label: "Dash", color: "#b58eff" },
+};
 
 export default function Home() {
   const canvas = useRef<HTMLCanvasElement>(null); const keys = useRef<Record<string, boolean>>({}); const lookAngle = useRef(-Math.PI / 2); const aim = useRef({ x: WORLD_W / 2, y: WORLD_H / 2, fire: false }); const aimDot = useRef({ x: W / 2, y: H * .6 }); const game = useRef<Game>(initial());
-  const [screen, setScreen] = useState({ cash: 80, hp: 100, ammo: -1, wave: 1, map: 0, status: "playing" as Game["status"], weapon: "newspaper", notice: "WAVE 1 · CLEAR THE GARDEN" });
-  const sync = useCallback(() => { const g = game.current; setScreen({ cash: g.player.cash, hp: Math.ceil(g.player.hp), ammo: g.player.ammo, wave: g.wave, map: g.map, status: g.status, weapon: g.player.weapon, notice: g.notice }); }, []);
+  const [screen, setScreen] = useState({ cash: 80, hp: 100, ammo: -1, wave: 1, map: 0, status: "playing" as Game["status"], weapon: "newspaper", notice: "WAVE 1 · CLEAR THE GARDEN", shield: 0, toolbar: [null, null, null, null, null, null] as ToolbarSlot[], activeSlot: 0 });
+  const useToolbarItem = useCallback((slot: number) => {
+    const g = game.current;
+    if (g.status !== "playing") return;
+    if (slot === 0) {
+      g.activeSlot = 0;
+      g.notice = `${shop.find(x => x.id === g.player.weapon)?.name ?? "Weapon"} selected`;
+      sync();
+      return;
+    }
+    const item = g.toolbar[slot];
+    if (!item || item.count <= 0) return;
+    g.activeSlot = slot;
+    if (item.kind === "shield") {
+      const gained = Math.min(30, 99 - g.player.shield);
+      g.player.shield += gained;
+      g.notice = `SHIELD ACTIVATED · +${gained} BARRIER`;
+    } else if (item.kind === "medkit") {
+      const healed = Math.min(35, 100 - g.player.hp);
+      g.player.hp += healed;
+      g.notice = `MED KIT USED · +${Math.ceil(healed)} HP`;
+    } else if (item.kind === "overdrive") {
+      g.player.boost = 240;
+      g.notice = "OVERDRIVE ACTIVATED · DAMAGE BOOST";
+    } else if (item.kind === "burst") {
+      if (g.player.ammo >= 0) g.player.ammo += 18;
+      g.player.rapidFire = 220;
+      g.notice = "BURST ACTIVATED · RAPID FIRE + AMMO";
+    } else if (item.kind === "dash") {
+      g.player.speedBurst = 220;
+      g.notice = "DASH ACTIVATED · SPEED BOOST";
+    }
+    item.count--;
+    if (item.count <= 0) g.toolbar[slot] = null;
+    sync();
+  }, []);
+  const sync = useCallback(() => { const g = game.current; setScreen({ cash: g.player.cash, hp: Math.ceil(g.player.hp), ammo: g.player.ammo, wave: g.wave, map: g.map, status: g.status, weapon: g.player.weapon, notice: g.notice, shield: Math.ceil(g.player.shield), toolbar: [...g.toolbar], activeSlot: g.activeSlot }); }, []);
   const restart = useCallback(() => { game.current = initial(); lookAngle.current = -Math.PI / 2; sync(); }, [sync]);
   const nextWave = useCallback(() => { const g = game.current; const previousMap = g.map; g.status = "playing"; g.wave++; g.map = (g.wave - 1) % maps.length; g.spawn = 20; g.spawned = 0; g.pickups = pickupsFor(g.map); if (g.map !== previousMap) { g.player.x = WORLD_W / 2; g.player.y = WORLD_H / 2; } g.notice = g.wave % 10 === 0 ? "THE QUEEN IS COMING" : `WAVE ${g.wave} · ${maps[g.map].name}`; sync(); }, [sync]);
   const buy = (id: string, cost: number) => { const g = game.current; if (g.player.cash < cost) return; if (g.player.weapon === id && cost > 0) { g.player.cash -= cost; g.player.ammo += Math.ceil(ammoFor(id) * .5); g.notice = `${shop.find(x => x.id === id)?.name.toUpperCase()} AMMO REFILLED`; } else { g.player.cash -= cost; g.player.weapon = id; g.player.ammo = ammoFor(id); g.notice = `${shop.find(x => x.id === id)?.name.toUpperCase()} EQUIPPED`; } sync(); };
@@ -80,7 +124,32 @@ export default function Home() {
         const fireRate = p.rapidFire > 0 ? Math.max(2, Math.floor(weapon.rate * .7)) : weapon.rate; const powerMod = p.boost > 0 ? 1.35 : 1; if ((aim.current.fire || keys.current[" "]) && p.cooldown <= 0 && p.ammo !== 0) { const a = Math.atan2(aim.current.y - p.y, aim.current.x - p.x), spread = p.weapon === "sprayer" ? .12 : p.weapon === "twinblades" ? .09 : p.weapon === "shotgun" ? .22 : p.weapon === "laser" ? .03 : 0, offsets = p.weapon === "shotgun" ? [-spread*2,-spread,0,spread,spread*2] : p.weapon === "pulse" ? [-0.08,0,0.08] : spread ? [-spread,spread] : [0]; for (const offset of offsets) { const damage = (offsets.length > 1 ? weapon.damage * .8 : weapon.damage) * powerMod; g.bullets.push({ x: p.x + Math.cos(a) * 23, y: p.y + Math.sin(a) * 23, dx: Math.cos(a + offset) * weapon.speed, dy: Math.sin(a + offset) * weapon.speed, life: weapon.life, damage, flame: weapon.flame, weapon: p.weapon }); } if (p.ammo > 0) p.ammo--; p.cooldown = fireRate; } else if ((aim.current.fire || keys.current[" "]) && p.ammo === 0) { g.notice = "OUT OF AMMO · FIND A SUPPLY CRATE OR REFILL AT THE SHOP"; }
         const target = g.wave % 10 === 0 ? 1 : 8 + g.wave * 3; if (g.spawned < target && --g.spawn <= 0) { spawn(g.wave % 10 === 0 ? "Queen" : undefined); g.spawned++; g.spawn = g.wave % 10 === 0 ? 9999 : 24 + Math.random() * 35; }
         g.bullets = g.bullets.filter(b => { b.x += b.dx; b.y += b.dy; return --b.life > 0 && b.x > -20 && b.x < WORLD_W + 20 && b.y > -20 && b.y < WORLD_H + 20; }); g.effects = g.effects.filter(effect => --effect.life > 0);
-        g.pickups.forEach(pickup => { if (!pickup.claimed && Math.hypot(p.x - pickup.x, p.y - pickup.y) < 32) { pickup.claimed = true; switch (pickup.kind) { case "supply": p.cash += 20; if (p.ammo >= 0) p.ammo += Math.ceil(ammoFor(p.weapon) * .35); g.notice = `SUPPLY BOX OPENED · +$20${p.ammo >= 0 ? " · AMMO RESTORED" : ""}`; break; case "medic": { const healed = Math.min(35, 100 - p.hp); p.hp += healed; g.notice = `MEDIC BOX USED · +${Math.ceil(healed)} HP`; break; } case "shield": p.shield += 30; g.notice = "SHIELD BOX · 30 POINTS OF BARRIER"; break; case "overdrive": p.boost = 240; g.notice = "OVERDRIVE BOX · DAMAGE BOOST"; break; case "burst": { if (p.ammo >= 0) p.ammo += 18; p.rapidFire = 220; g.notice = "BURST BOX · RAPID FIRE + AMMO"; break; } case "dash": p.speedBurst = 220; g.notice = "DASH BOX · SPEED BOOST"; break; } } });
+        g.pickups.forEach(pickup => { if (!pickup.claimed && Math.hypot(p.x - pickup.x, p.y - pickup.y) < 32) { pickup.claimed = true; switch (pickup.kind) { case "supply": p.cash += 20; if (p.ammo >= 0) p.ammo += Math.ceil(ammoFor(p.weapon) * .35); g.notice = `SUPPLY BOX OPENED · +$20${p.ammo >= 0 ? " · AMMO RESTORED" : ""}`; break; case "medic": { // Store in toolbar slot 3 (index 2)
+            const slot = g.toolbar[2];
+            if (slot && slot.kind === "medkit") { slot.count = Math.min(slot.count + 1, 5); }
+            else if (!g.toolbar[2]) { g.toolbar[2] = { kind: "medkit", count: 1 }; }
+            else { p.hp = Math.min(100, p.hp + 20); g.notice = "MED KIT STORED · +20 HP DIRECT"; }
+            if (!g.notice.startsWith("MED KIT")) g.notice = "MED KIT STORED (PRESS 3)";
+          } break; case "shield": { // Store in toolbar slot 2 (index 1)
+            const slot = g.toolbar[1];
+            if (slot && slot.kind === "shield") { slot.count = Math.min(slot.count + 1, 3); }
+            else if (!g.toolbar[1]) { g.toolbar[1] = { kind: "shield", count: 1 }; }
+            else { p.shield = Math.min(99, p.shield + 20); g.notice = "SHIELD STORED · +20 BARRIER DIRECT"; }
+            if (!g.notice.startsWith("SHIELD")) g.notice = "SHIELD STORED (PRESS 2)";
+          } break; case "overdrive": case "burst": case "dash": { // Store in slots 4-6 (indices 3-5)
+            const slotIdx = g.toolbar.findIndex((s, i) => i >= 3 && i <= 5 && (s?.kind === pickup.kind || !s));
+            if (slotIdx >= 3 && slotIdx <= 5) {
+              const slot = g.toolbar[slotIdx];
+              if (slot && slot.kind === pickup.kind) { slot.count = Math.min(slot.count + 1, 3); }
+              else { g.toolbar[slotIdx] = { kind: pickup.kind as "overdrive" | "burst" | "dash", count: 1 }; }
+              g.notice = `${pickup.kind.toUpperCase()} STORED (PRESS ${slotIdx + 1})`;
+            } else {
+              // All slots full, activate directly
+              if (pickup.kind === "overdrive") { p.boost = 240; g.notice = "OVERDRIVE ACTIVATED"; }
+              else if (pickup.kind === "burst") { if (p.ammo >= 0) p.ammo += 16; p.rapidFire = 220; g.notice = "BURST ACTIVATED"; }
+              else if (pickup.kind === "dash") { p.speedBurst = 220; g.notice = "DASH ACTIVATED"; }
+            }
+          } break; } } });
         g.enemies = g.enemies.filter(e => { const a = Math.atan2(p.y - e.y, p.x - e.x); const lunge = e.kind === "Zippa" && e.cooldown-- < 0 ? 2.1 : 1, snare = e.snared ? .18 : 1; if (e.kind === "Zippa" && e.cooldown < -20) e.cooldown = 55; if (e.kind === "Lumen" && g.clock % 60 === 0) { const d = Math.atan2(p.y - e.y, p.x - e.x); g.bullets.push({ x: e.x, y: e.y, dx: Math.cos(d) * 7.5, dy: Math.sin(d) * 7.5, life: 35, damage: 5, flame: false, weapon: "pulse" }); } if (e.kind === "Silk" && g.clock % 80 === 0) { p.webbed = 45; } if (e.kind === "Formica" && g.clock % 90 === 0) { e.x += Math.cos(a) * 35; e.y += Math.sin(a) * 35; } e.x += Math.cos(a) * e.speed * lunge * snare; e.y += Math.sin(a) * e.speed * lunge * snare; e.hit = Math.max(0, e.hit - 1); e.snared = Math.max(0, (e.snared ?? 0) - 1); let alive = true; g.bullets = g.bullets.filter(b => { if (Math.hypot(b.x-e.x, b.y-e.y) < e.size + 6) { const damage = b.damage * (e.kind === "Roly" && e.hit === 0 ? .6 : 1); e.hp -= damage; if (b.weapon === "net") e.snared = 120; if (b.weapon === "horn") e.snared = 70; if (b.weapon === "cryo") e.snared = 150; e.hit = 4; g.effects.push({ x: e.x, y: e.y, life: b.weapon === "grenade" ? 18 : 12, max: b.weapon === "grenade" ? 18 : 12, weapon: b.weapon }); if (b.weapon === "grenade") { g.enemies.forEach(other => { const distance = Math.hypot(other.x - e.x, other.y - e.y); if (other !== e && distance < 145) { const splash = Math.ceil(12 * (1 - distance / 170)); other.hp -= splash; other.hit = 8; } }); } e.x -= Math.cos(a) * 11; e.y -= Math.sin(a) * 11; if (e.hp <= 0) { if (e.kind === "Skitters" && !e.revived && !b.flame) { e.revived = true; e.hp = e.max * .25; } else { p.cash += e.cash; alive = false; } } return b.weapon === "grenade" ? false : !b.flame; } return true; }); if (Math.hypot(p.x-e.x, p.y-e.y) < e.size + 16 && p.hurt === 0) { const hit = e.kind === "Queen" ? 12 : 6; if (p.shield > 0) { p.shield = Math.max(0, p.shield - hit); } else { p.hp -= hit; } p.hurt = 34; e.x -= Math.cos(a) * 24; e.y -= Math.sin(a) * 24; } return alive; });
         g.enemies = g.enemies.filter(e => { if (e.hp > 0) return true; p.cash += e.cash; return false; });
         if (p.hp <= 0) { p.hp = 0; g.status = "lost"; g.notice = "THE SWARM OVERRAN THE BLOCK"; sync(); } else if (g.enemies.length === 0 && g.spawned === target) { p.cash += 35 + g.wave * 8; g.status = "shop"; g.notice = `WAVE ${g.wave} CLEAR · +$${35 + g.wave * 8} BONUS`; sync(); }
@@ -128,5 +197,51 @@ export default function Home() {
   }, [sync]);
   const point = (e: React.PointerEvent<HTMLCanvasElement>) => { const p=game.current.player; if (document.pointerLockElement === e.currentTarget) { lookAngle.current += e.movementX * .012; aimDot.current={x:W/2,y:H*.6}; } else { const r=e.currentTarget.getBoundingClientRect(), x=(e.clientX-r.left)*W/r.width, y=(e.clientY-r.top)*H/r.height; lookAngle.current=Math.atan2(y-H*.6,x-W/2); aimDot.current={x,y}; } aim.current.x=p.x+Math.cos(lookAngle.current)*600;aim.current.y=p.y+Math.sin(lookAngle.current)*600; };
   const weaponName = shop.find(x=>x.id===screen.weapon)?.name ?? "Rolled Newspaper +3";
-  return <main className="shell"><section className="cabinet"><header><div className="logo"><span>⚔</span><div><small>EXTERMINATOR ARCADE SYSTEM</small><h1>BUG BRAWLER</h1></div></div><div className="cash">CASH <b>${screen.cash}</b></div></header><div className="stats"><div><small>MAP</small><b>{String(screen.map+1).padStart(2,"0")} <i>{maps[screen.map % maps.length].name}</i></b></div><div><small>WAVE</small><b>{screen.wave} <i>∞</i></b></div><div className="vitals"><small>HUNTER VITALS</small><span><em style={{width:`${screen.hp}%`}}/></span><b>{screen.hp} HP</b></div></div><div className="arena"><canvas ref={canvas} width={W} height={H} onPointerMove={point} onPointerDown={e=>{e.currentTarget.requestPointerLock();point(e);aim.current.fire=true;}} onPointerUp={()=>aim.current.fire=false} onPointerLeave={()=>aim.current.fire=false}/><div className="map-note">{maps[screen.map % maps.length].desc}</div></div><footer><div className="loadout"><small>EQUIPPED · {screen.ammo < 0 ? "UNLIMITED AMMO" : `${screen.ammo} AMMO`}</small><b>{weaponName}</b></div><div className="keys"><kbd>WASD</kbd> move <kbd>CLICK</kbd> attack <kbd>Q / E</kbd> turn <kbd>F</kbd> 180°</div><button onClick={restart}>↻ NEW RUN</button></footer></section>{screen.status === "shop" && <div className="modal"><div className="shop"><p className="eyebrow">OLD MAN EXTERMINATOR · CHECKPOINT SHOP</p><h2>Spend it before it spends you.</h2><p className="shop-cash">Your cash: <b>${screen.cash}</b></p><div className="cards">{shop.map(item=><button className={screen.weapon===item.id?"item active":"item"} key={item.id} onClick={()=>buy(item.id,item.cost)} disabled={screen.cash<item.cost||(screen.weapon===item.id&&item.cost===0)}><small>{item.stat}</small><strong>{item.name}</strong><span>{item.desc}</span><b>{screen.weapon===item.id&&item.cost>0?`REFILL $${item.cost}`:item.cost===0?"STARTER":`$${item.cost}`}</b></button>)}</div><button className="continue" onClick={nextWave}>START WAVE {screen.wave+1} →</button></div></div>}{(screen.status === "lost" || screen.status === "won") && <div className="modal"><div className="end"><p className="eyebrow">RUN COMPLETE</p><h2>{screen.status === "won" ? "THE BLOCK IS SAFE." : "THE BUGS TOOK THE BLOCK."}</h2><p>Final cash collected: <b>${screen.cash}</b></p><button className="continue" onClick={restart}>BEGIN A NEW HUNT →</button></div></div>}<p className="under">A wave survival game · kill bugs · collect cash · upgrade your loadout</p></main>;
+  // Keyboard shortcuts for toolbar (1-6)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const key = e.key;
+      if (key >= "1" && key <= "6") {
+        const slot = parseInt(key) - 1;
+        useToolbarItem(slot);
+      }
+    };
+    addEventListener("keydown", handler);
+    return () => removeEventListener("keydown", handler);
+  }, [useToolbarItem]);
+
+  // Shield bar style
+  const shieldBarStyle = { width: `${Math.min(100, screen.shield)}%` };
+  const shieldActive = screen.shield > 0;
+
+  return <main className="shell"><section className="cabinet"><header><div className="logo"><span>⚔</span><div><small>EXTERMINATOR ARCADE SYSTEM</small><h1>BUG BRAWLER</h1></div></div><div className="cash">CASH <b>${screen.cash}</b></div></header><div className="stats"><div><small>MAP</small><b>{String(screen.map+1).padStart(2,"0")} <i>{maps[screen.map % maps.length].name}</i></b></div><div><small>WAVE</small><b>{screen.wave} <i>∞</i></b></div><div className="vitals"><small>HUNTER VITALS</small>
+        <span><em style={{width:`${screen.hp}%`}}/></span>
+        <b>{screen.hp} HP</b>
+        <div className={`shield-bar ${shieldActive?"active":""}`}><em style={shieldBarStyle}/><small>SHIELD {Math.ceil(screen.shield)}</small></div>
+      </div></div><div className="arena"><canvas ref={canvas} width={W} height={H} onPointerMove={point} onPointerDown={e=>{e.currentTarget.requestPointerLock();point(e);aim.current.fire=true;}} onPointerUp={()=>aim.current.fire=false} onPointerLeave={()=>aim.current.fire=false}/>
+        <div className="toolbar">{screen.toolbar.map((slot, i) => {
+          const isWeapon = i === 0;
+          const isActive = screen.activeSlot === i;
+          const emptySlot = !slot || slot.count <= 0;
+          // Weapon slot always shows the weapon
+          if (isWeapon) {
+            return <button key={i} className={`tb-item ${isActive?"active":""} weapon-slot`} onClick={() => useToolbarItem(0)} title="Current weapon"><kbd className="tb-key">1</kbd><span className="tb-weapon-icon">🔫</span><span className="tb-label">{weaponName.slice(0, 8)}</span>{screen.ammo >= 0 && <span className="tb-count">{screen.ammo}</span>}</button>;
+          }
+          // Empty slots
+          const info = slot && !emptySlot ? toolbarIcons[slot.kind] : null;
+          const slotLabels = ["Shield", "Med Kit", "Crate", "Crate", "Crate"];
+          const slotIcons = ["🛡", "✚", "📦", "📦", "📦"];
+          return <button key={i} className={`tb-item ${isActive?"active":""} ${emptySlot?"empty":""}`} onClick={() => useToolbarItem(i)} title={slot && !emptySlot ? `${slot.kind.toUpperCase()} (${slot.count})` : `Slot ${i+1}`}>
+            <kbd className="tb-key">{i + 1}</kbd>
+            {slot && !emptySlot ? <>
+              <span className="tb-icon">{info?.icon ?? slotIcons[i]}</span>
+              <span className="tb-label">{info?.label ?? slotLabels[i]}</span>
+              <span className="tb-count">{slot.count}</span>
+            </> : <>
+              <span className="tb-icon">{slotIcons[i]}</span>
+              <span className="tb-label">Empty</span>
+            </>}
+          </button>;
+        })}</div>
+        <div className="map-note">{maps[screen.map % maps.length].desc}</div></div><footer><div className="loadout"><small>EQUIPPED · {screen.ammo < 0 ? "UNLIMITED AMMO" : `${screen.ammo} AMMO`}</small><b>{weaponName}</b></div><div className="keys"><kbd>WASD</kbd> move <kbd>CLICK</kbd> attack <kbd>1-6</kbd> items <kbd>Q / E</kbd> turn <kbd>F</kbd> 180°</div><button onClick={restart}>↻ NEW RUN</button></footer></section>{screen.status === "shop" && <div className="modal"><div className="shop"><p className="eyebrow">OLD MAN EXTERMINATOR · CHECKPOINT SHOP</p><h2>Spend it before it spends you.</h2><p className="shop-cash">Your cash: <b>${screen.cash}</b></p><div className="cards">{shop.map(item=><button className={screen.weapon===item.id?"item active":"item"} key={item.id} onClick={()=>buy(item.id,item.cost)} disabled={screen.cash<item.cost||(screen.weapon===item.id&&item.cost===0)}><small>{item.stat}</small><strong>{item.name}</strong><span>{item.desc}</span><b>{screen.weapon===item.id&&item.cost>0?`REFILL $${item.cost}`:item.cost===0?"STARTER":`$${item.cost}`}</b></button>)}</div><button className="continue" onClick={nextWave}>START WAVE {screen.wave+1} →</button></div></div>}{(screen.status === "lost" || screen.status === "won") && <div className="modal"><div className="end"><p className="eyebrow">RUN COMPLETE</p><h2>{screen.status === "won" ? "THE BLOCK IS SAFE." : "THE BUGS TOOK THE BLOCK."}</h2><p>Final cash collected: <b>${screen.cash}</b></p><button className="continue" onClick={restart}>BEGIN A NEW HUNT →</button></div></div>}<p className="under">A wave survival game · kill bugs · collect cash · upgrade your loadout</p></main>;
 }
