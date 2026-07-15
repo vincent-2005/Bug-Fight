@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bug Brawler Preview</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: #09111b;
+        color: #f5f7ff;
+      }
+      .shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      .card {
+        width: min(1200px, 100%);
+        background: rgba(11, 21, 34, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 18px;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+      }
+      .topbar {
+        padding: 16px 20px;
+        background: linear-gradient(90deg, #16253a, #254665);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+      }
+      .topbar h1 {
+        margin: 0 0 6px;
+        font-size: 1.2rem;
+      }
+      .topbar p {
+        margin: 0;
+        color: #8eb7ff;
+      }
+      iframe {
+        width: 100%;
+        min-height: 80vh;
+        border: 0;
+        background: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="card">
+        <div class="topbar">
+          <h1>Bug Brawler Preview</h1>
+          <p>This page loads the local Next.js app so Go Live and localhost both work.</p>
+        </div>
+        <iframe id="app-frame" title="Bug Brawler app"></iframe>
+      </div>
+    </div>
+    <script>
+      const candidates = ["http://127.0.0.1:3000/", "http://127.0.0.1:3001/", "http://localhost:3000/", "http://localhost:3001/"];
+      const frame = document.getElementById("app-frame");
+
+      async function tryLoad(url) {
+        try {
+          const response = await fetch(url, { method: "HEAD" });
+          if (response.ok) {
+            frame.src = url;
+            return true;
+          }
+        } catch (error) {
+          console.warn("Preview probe failed", url, error);
+        }
+        return false;
+      }
+
+      (async () => {
+        for (const url of candidates) {
+          if (await tryLoad(url)) return;
+        }
+        frame.srcdoc = "<h2 style='font-family:Arial,sans-serif;padding:24px;color:#111'>The app is not running yet. Start it with npm run dev.</h2>";
+      })();
+    </script>
+  </body>
+</html>

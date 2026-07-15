@@ -2,19 +2,21 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Run the app locally with:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
+This binds the server to 0.0.0.0 on port 3000 so it works for both localhost and VS Code preview/Go Live.
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+If you want to run it only on the local loopback interface, use:
+
+```bash
+npm run dev:local
+```
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
