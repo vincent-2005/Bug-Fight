@@ -1,5 +1,5 @@
-import BugBrawler from "@/components/bug-brawler/BugBrawler";
+import HomeHub from "@/components/bug-brawler/HomeHub";
 
 export default function Home() {
-  return <BugBrawler />;
+  return <HomeHub />;
 }
