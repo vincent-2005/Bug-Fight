@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { usePlayerProgress } from "./progress";
 
@@ -20,6 +20,15 @@ const baseLeaderboard: LeaderboardEntry[] = [
 export default function HomeHub() {
   const { progress, setProgress } = usePlayerProgress();
   const { money, weaponLevel, armorLevel, levelsSurvived } = progress;
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [showTutorial, setShowTutorial] = useState(true);
+  const tutorial = [
+    { title: "Welcome to Bug Brawler Town", text: "This is your home base. Your cash, upgrades, best survival score, and arcade games all connect here." },
+    { title: "Hunt bugs and survive", text: "Choose Launch Bug Brawler to enter the hunt. Move with WASD, attack with click or Space, collect crates, and survive waves to earn leaderboard points." },
+    { title: "Climb the leaderboard", text: "Your points equal your highest number of levels survived. Finish waves, then beat that best run to move up the rankings." },
+    { title: "Spend cash on upgrades", text: "Use the Upgrade Shop to improve your Weapon Core and Armor Shell. Cash comes from arcade mini-games and helps you prepare for longer runs." },
+    { title: "Play mini-games and view your profile", text: "Open the arcade to earn cash in extra challenges. Your Profile keeps your score, cash, and upgrade levels in one place." },
+  ];
 
   const leaderboard = useMemo(() => {
     const playerScore = levelsSurvived;
@@ -121,6 +130,14 @@ export default function HomeHub() {
           </div>
         </div>
       </section>
+      {showTutorial && <div className="modal"><div className="end" style={styles.tutorial}>
+        <p className="eyebrow">BUG BRAWLER GUIDE · {tutorialStep + 1}/{tutorial.length}</p>
+        <h2>{tutorial[tutorialStep].title}</h2>
+        <p>{tutorial[tutorialStep].text}</p>
+        <button className="continue" onClick={() => tutorialStep === tutorial.length - 1 ? setShowTutorial(false) : setTutorialStep((step) => step + 1)}>
+          {tutorialStep === tutorial.length - 1 ? "START EXPLORING →" : "NEXT →"}
+        </button>
+      </div></div>}
     </main>
   );
 }
@@ -168,6 +185,9 @@ const styles: Record<string, CSSProperties> = {
     display: "flex",
     gap: 12,
     flexWrap: "wrap",
+  },
+  tutorial: {
+    maxWidth: 560,
   },
   primaryButton: {
     border: "none",
