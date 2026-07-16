@@ -21,14 +21,21 @@ export default function HomeHub() {
   const { progress, setProgress } = usePlayerProgress();
   const { money, weaponLevel, armorLevel, levelsSurvived } = progress;
   const [tutorialStep, setTutorialStep] = useState(0);
-  const [showTutorial, setShowTutorial] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(false);
   const tutorial = [
     { title: "Welcome to Bug Brawler Town", text: "This is your home base. Your cash, upgrades, best survival score, and arcade games all connect here." },
-    { title: "Hunt bugs and survive", text: "Choose Launch Bug Brawler to enter the hunt. Move with WASD, attack with click or Space, collect crates, and survive waves to earn leaderboard points." },
-    { title: "Climb the leaderboard", text: "Your points equal your highest number of levels survived. Finish waves, then beat that best run to move up the rankings." },
-    { title: "Spend cash on upgrades", text: "Use the Upgrade Shop to improve your Weapon Core and Armor Shell. Cash comes from arcade mini-games and helps you prepare for longer runs." },
-    { title: "Play mini-games and view your profile", text: "Open the arcade to earn cash in extra challenges. Your Profile keeps your score, cash, and upgrade levels in one place." },
+    { title: "Bug Brawler controls", text: "Choose Launch Bug Brawler to enter the hunt. Move with WASD or arrow keys, aim with the mouse, attack with click or Space, turn with Q/E, and press F for a quick 180° turn." },
+    { title: "Survive each wave", text: "Keep enemies away from your health bar. Walk over crates for supplies, med kits, shields, and boosts; use equipped toolbar items with keys 1–6. Clear a wave to reach the shop." },
+    { title: "Climb the leaderboard", text: "Your points equal your highest number of completed levels survived. Beat your best run to move up the rankings—cash does not affect leaderboard points." },
+    { title: "Spend cash on upgrades", text: "Use the Upgrade Shop here to raise Weapon Core and Armor Shell levels. Stronger gear helps you hold out longer in Bug Brawler." },
+    { title: "Earn cash in mini-games", text: "Open the arcade for extra challenges, including the shooting range and obby. Complete games to earn cash, then return here to buy upgrades." },
+    { title: "Use your personal profile", text: "Your Profile shows your best score, cash, weapon level, and armor level. It is linked from the top-right corner inside Bug Brawler." },
   ];
+
+  const openTutorial = () => {
+    setTutorialStep(0);
+    setShowTutorial(true);
+  };
 
   const leaderboard = useMemo(() => {
     const playerScore = levelsSurvived;
@@ -61,6 +68,8 @@ export default function HomeHub() {
           <div style={styles.buttonRow}>
             <Link href="/play" style={styles.primaryButton}>Launch Bug Brawler</Link>
             <Link href="/mini-games" style={styles.secondaryButton}>Open arcade</Link>
+            <Link href="/profile" style={styles.secondaryButton}>Personal Page</Link>
+            <button style={styles.secondaryButton} onClick={openTutorial}>Watch Tutorial</button>
           </div>
         </div>
         <div style={styles.moneyCard}>
@@ -135,7 +144,7 @@ export default function HomeHub() {
         <h2>{tutorial[tutorialStep].title}</h2>
         <p>{tutorial[tutorialStep].text}</p>
         <button className="continue" onClick={() => tutorialStep === tutorial.length - 1 ? setShowTutorial(false) : setTutorialStep((step) => step + 1)}>
-          {tutorialStep === tutorial.length - 1 ? "START EXPLORING →" : "NEXT →"}
+          {tutorialStep === tutorial.length - 1 ? "CLOSE TUTORIAL" : "NEXT →"}
         </button>
       </div></div>}
     </main>

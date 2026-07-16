@@ -17,7 +17,7 @@ export default function ProfilePage() {
     <p style={styles.eyebrow}>EXTERMINATOR ID</p>
     <div style={styles.identity}><div style={styles.avatar}>🐞</div><div><h1 style={styles.title}>Bug Brawler</h1><p style={styles.subtitle}>Hunter profile · keep pushing your best run.</p></div></div>
     <div style={styles.stats}>{stats.map(([label, value, detail]) => <div key={label} style={styles.stat}><small style={styles.label}>{label}</small><strong style={styles.value}>{value}</strong><span style={styles.detail}>{detail}</span></div>)}</div>
-    <div style={styles.actions}><Link href="/play" style={styles.primary}>Continue hunting</Link><Link href="/" style={styles.secondary}>View leaderboard</Link></div>
+    <div style={styles.actions}><Link href="/play" style={styles.primary}>Continue hunting</Link><Link href="/" style={styles.secondary}>Open Bug Brawler Town</Link></div>
   </section></main>;
 }
 
