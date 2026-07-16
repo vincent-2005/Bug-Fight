@@ -11,7 +11,7 @@ export default function HomeHub() {
   const router = useRouter();
   const [username] = useState(() => getCurrentUsername());
   const { progress, setProgress } = usePlayerProgress();
-  const { money, weaponLevel, armorLevel } = progress;
+  const { money, weaponLevel, armorLevel, speedLevel, shieldLevel } = progress;
   const [tutorialStep, setTutorialStep] = useState(0);
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialFinished, setTutorialFinished] = useState(() =>
@@ -59,6 +59,8 @@ export default function HomeHub() {
     if (money < cost) return;
     setProgress((current) => ({ ...current, money: current.money - cost, armorLevel: current.armorLevel + 1 }));
   };
+  const upgradeSpeed = () => { const cost = 50 + speedLevel * 25; if (money >= cost) setProgress((current) => ({ ...current, money: current.money - cost, speedLevel: current.speedLevel + 1 })); };
+  const upgradeShield = () => { const cost = 65 + shieldLevel * 30; if (money >= cost) setProgress((current) => ({ ...current, money: current.money - cost, shieldLevel: current.shieldLevel + 1 })); };
 
   if (!username) return null;
 
@@ -113,6 +115,8 @@ export default function HomeHub() {
               Upgrade · ${70 + armorLevel * 30}
             </button>
           </div>
+          <div style={styles.upgradeCard}><div><h3 style={styles.cardTitle}>Turbo Boots · Lv {speedLevel}</h3><p style={styles.cardText}>Move faster through every bug-filled map.</p></div><button style={styles.buyButton} onClick={upgradeSpeed}>Upgrade · ${50 + speedLevel * 25}</button></div>
+          <div style={styles.upgradeCard}><div><h3 style={styles.cardTitle}>Shield Generator · Lv {shieldLevel}</h3><p style={styles.cardText}>Start each hunt with extra barrier protection.</p></div><button style={styles.buyButton} onClick={upgradeShield}>Upgrade · ${65 + shieldLevel * 30}</button></div>
         </div>
       </section>
 
