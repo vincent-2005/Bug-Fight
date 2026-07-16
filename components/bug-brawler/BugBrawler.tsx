@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { loadProgress, saveProgress } from "./progress";
 
 const W = 960, H = 560, WORLD_W = 2400, WORLD_H = 1600;
 type EnemyKind = "Grubbin" | "Zippa" | "Silk" | "Formica" | "Lumen" | "Chomp" | "Roly" | "Skitters" | "Rex" | "Cicada" | "Queen";
@@ -70,8 +72,20 @@ const toolbarIcons: Record<string, { icon: string; label: string; color: string 
 };
 
 export default function Home() {
+  const router = useRouter();
   const canvas = useRef<HTMLCanvasElement>(null); const keys = useRef<Record<string, boolean>>({}); const lookAngle = useRef(-Math.PI / 2); const aim = useRef({ x: WORLD_W / 2, y: WORLD_H / 2, fire: false }); const aimDot = useRef({ x: W / 2, y: H * .6 }); const game = useRef<Game>(initial());
   const [screen, setScreen] = useState({ cash: 80, hp: 100, ammo: -1, wave: 1, map: 0, status: "playing" as Game["status"], weapon: "newspaper", notice: "WAVE 1 · CLEAR THE GARDEN", shield: 0, toolbar: [null, null, null, null, null, null] as ToolbarSlot[], activeSlot: 0 });
+  const [tutorialState, setTutorialState] = useState<"open" | "complete">(() =>
+    typeof window !== "undefined" && loadProgress().tutorialCompleted ? "complete" : "open"
+  );
+  const [tutorialStep, setTutorialStep] = useState(0);
+
+  const finishTutorial = () => {
+    const progress = loadProgress();
+    saveProgress({ ...progress, tutorialCompleted: true });
+    setTutorialState("complete");
+    router.push("/");
+  };
   const useToolbarItem = useCallback((slot: number) => {
     const g = game.current;
     if (g.status !== "playing") return;
@@ -152,7 +166,7 @@ export default function Home() {
           } break; } } });
         g.enemies = g.enemies.filter(e => { const a = Math.atan2(p.y - e.y, p.x - e.x); const lunge = e.kind === "Zippa" && e.cooldown-- < 0 ? 2.1 : 1, snare = e.snared ? .18 : 1; if (e.kind === "Zippa" && e.cooldown < -20) e.cooldown = 55; if (e.kind === "Lumen" && g.clock % 60 === 0) { const d = Math.atan2(p.y - e.y, p.x - e.x); g.bullets.push({ x: e.x, y: e.y, dx: Math.cos(d) * 7.5, dy: Math.sin(d) * 7.5, life: 35, damage: 5, flame: false, weapon: "pulse" }); } if (e.kind === "Silk" && g.clock % 80 === 0) { p.webbed = 45; } if (e.kind === "Formica" && g.clock % 90 === 0) { e.x += Math.cos(a) * 35; e.y += Math.sin(a) * 35; } e.x += Math.cos(a) * e.speed * lunge * snare; e.y += Math.sin(a) * e.speed * lunge * snare; e.hit = Math.max(0, e.hit - 1); e.snared = Math.max(0, (e.snared ?? 0) - 1); let alive = true; g.bullets = g.bullets.filter(b => { if (Math.hypot(b.x-e.x, b.y-e.y) < e.size + 6) { const damage = b.damage * (e.kind === "Roly" && e.hit === 0 ? .6 : 1); e.hp -= damage; if (b.weapon === "net") e.snared = 120; if (b.weapon === "horn") e.snared = 70; if (b.weapon === "cryo") e.snared = 150; e.hit = 4; g.effects.push({ x: e.x, y: e.y, life: b.weapon === "grenade" ? 18 : 12, max: b.weapon === "grenade" ? 18 : 12, weapon: b.weapon }); if (b.weapon === "grenade") { g.enemies.forEach(other => { const distance = Math.hypot(other.x - e.x, other.y - e.y); if (other !== e && distance < 145) { const splash = Math.ceil(12 * (1 - distance / 170)); other.hp -= splash; other.hit = 8; } }); } e.x -= Math.cos(a) * 11; e.y -= Math.sin(a) * 11; if (e.hp <= 0) { if (e.kind === "Skitters" && !e.revived && !b.flame) { e.revived = true; e.hp = e.max * .25; } else { p.cash += e.cash; alive = false; } } return b.weapon === "grenade" ? false : !b.flame; } return true; }); if (Math.hypot(p.x-e.x, p.y-e.y) < e.size + 16 && p.hurt === 0) { const hit = e.kind === "Queen" ? 12 : 6; if (p.shield > 0) { p.shield = Math.max(0, p.shield - hit); } else { p.hp -= hit; } p.hurt = 34; e.x -= Math.cos(a) * 24; e.y -= Math.sin(a) * 24; } return alive; });
         g.enemies = g.enemies.filter(e => { if (e.hp > 0) return true; p.cash += e.cash; return false; });
-        if (p.hp <= 0) { p.hp = 0; g.status = "lost"; g.notice = "THE SWARM OVERRAN THE BLOCK"; sync(); } else if (g.enemies.length === 0 && g.spawned === target) { p.cash += 35 + g.wave * 8; g.status = "shop"; g.notice = `WAVE ${g.wave} CLEAR · +$${35 + g.wave * 8} BONUS`; sync(); }
+        if (p.hp <= 0) { const progress = loadProgress(); p.hp = 0; saveProgress({ ...progress, levelsSurvived: Math.max(progress.levelsSurvived, g.wave - 1) }); g.status = "lost"; g.notice = "THE SWARM OVERRAN THE BLOCK"; sync(); } else if (g.enemies.length === 0 && g.spawned === target) { p.cash += 35 + g.wave * 8; g.status = "shop"; g.notice = `WAVE ${g.wave} CLEAR · +$${35 + g.wave * 8} BONUS`; sync(); }
         if (g.clock % 10 === 0) sync();
       }
       const thirdPerson = true;
@@ -243,5 +257,5 @@ export default function Home() {
             </>}
           </button>;
         })}</div>
-        <div className="map-note">{maps[screen.map % maps.length].desc}</div></div><footer><div className="loadout"><small>EQUIPPED · {screen.ammo < 0 ? "UNLIMITED AMMO" : `${screen.ammo} AMMO`}</small><b>{weaponName}</b></div><div className="keys"><kbd>WASD</kbd> move <kbd>CLICK</kbd> attack <kbd>1-6</kbd> items <kbd>Q / E</kbd> turn <kbd>F</kbd> 180°</div><button onClick={restart}>↻ NEW RUN</button></footer></section>{screen.status === "shop" && <div className="modal"><div className="shop"><p className="eyebrow">OLD MAN EXTERMINATOR · CHECKPOINT SHOP</p><h2>Spend it before it spends you.</h2><p className="shop-cash">Your cash: <b>${screen.cash}</b></p><div className="cards">{shop.map(item=><button className={screen.weapon===item.id?"item active":"item"} key={item.id} onClick={()=>buy(item.id,item.cost)} disabled={screen.cash<item.cost||(screen.weapon===item.id&&item.cost===0)}><small>{item.stat}</small><strong>{item.name}</strong><span>{item.desc}</span><b>{screen.weapon===item.id&&item.cost>0?`REFILL $${item.cost}`:item.cost===0?"STARTER":`$${item.cost}`}</b></button>)}</div><button className="continue" onClick={nextWave}>START WAVE {screen.wave+1} →</button></div></div>}{(screen.status === "lost" || screen.status === "won") && <div className="modal"><div className="end"><p className="eyebrow">RUN COMPLETE</p><h2>{screen.status === "won" ? "THE BLOCK IS SAFE." : "THE BUGS TOOK THE BLOCK."}</h2><p>Final cash collected: <b>${screen.cash}</b></p><button className="continue" onClick={restart}>BEGIN A NEW HUNT →</button></div></div>}<p className="under">A wave survival game · kill bugs · collect cash · upgrade your loadout</p></main>;
+        <div className="map-note">{maps[screen.map % maps.length].desc}</div></div><footer><div className="loadout"><small>EQUIPPED · {screen.ammo < 0 ? "UNLIMITED AMMO" : `${screen.ammo} AMMO`}</small><b>{weaponName}</b></div><div className="keys"><kbd>WASD</kbd> move <kbd>CLICK</kbd> attack <kbd>1-6</kbd> items <kbd>Q / E</kbd> turn <kbd>F</kbd> 180°</div><button onClick={restart}>↻ NEW RUN</button></footer></section>{screen.status === "shop" && <div className="modal"><div className="shop"><p className="eyebrow">OLD MAN EXTERMINATOR · CHECKPOINT SHOP</p><h2>Spend it before it spends you.</h2><p className="shop-cash">Your cash: <b>${screen.cash}</b></p><div className="cards">{shop.map(item=><button className={screen.weapon===item.id?"item active":"item"} key={item.id} onClick={()=>buy(item.id,item.cost)} disabled={screen.cash<item.cost||(screen.weapon===item.id&&item.cost===0)}><small>{item.stat}</small><strong>{item.name}</strong><span>{item.desc}</span><b>{screen.weapon===item.id&&item.cost>0?`REFILL $${item.cost}`:item.cost===0?"STARTER":`$${item.cost}`}</b></button>)}</div><button className="continue" onClick={nextWave}>START WAVE {screen.wave+1} →</button></div></div>}{(screen.status === "lost" || screen.status === "won") && <div className="modal"><div className="end"><p className="eyebrow">RUN COMPLETE</p><h2>{screen.status === "won" ? "THE BLOCK IS SAFE." : "THE BUGS TOOK THE BLOCK."}</h2><p>Final cash collected: <b>${screen.cash}</b></p><button className="continue" onClick={restart}>BEGIN A NEW HUNT →</button></div></div>}{tutorialState !== "complete" && <div className="modal"><div className="end"><p className="eyebrow">BUG BRAWLER TRAINING · {tutorialStep + 1}/3</p><h2>{["Move through the swarm", "Aim and clear bugs", "Use pickups to survive"][tutorialStep]}</h2><p>{["Use WASD or the arrow keys to move. Turn with Q/E, or move your mouse to aim.", "Click or hold Space to attack. Keep enemies away from your hunter vitals.", "Walk over crates to collect supplies, then press 1–6 to use your equipped items. Survive as many waves as you can."][tutorialStep]}</p><button className="continue" onClick={() => tutorialStep === 2 ? finishTutorial() : setTutorialStep(step => step + 1)}>{tutorialStep === 2 ? "FINISH TRAINING → LEADERBOARD" : "NEXT →"}</button></div></div>}<p className="under">A wave survival game · kill bugs · collect cash · upgrade your loadout</p></main>;
 }

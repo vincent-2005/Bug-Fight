@@ -12,21 +12,21 @@ type LeaderboardEntry = {
 };
 
 const baseLeaderboard: LeaderboardEntry[] = [
-  { name: "Astra", score: 1840, rank: 1 },
-  { name: "Kade", score: 1625, rank: 2 },
-  { name: "Mina", score: 1480, rank: 3 },
+  { name: "Astra", score: 28, rank: 1 },
+  { name: "Kade", score: 21, rank: 2 },
+  { name: "Mina", score: 17, rank: 3 },
 ];
 
 export default function HomeHub() {
   const { progress, setProgress } = usePlayerProgress();
-  const { money, weaponLevel, armorLevel } = progress;
+  const { money, weaponLevel, armorLevel, levelsSurvived } = progress;
 
   const leaderboard = useMemo(() => {
-    const playerScore = 1200 + weaponLevel * 180 + armorLevel * 140;
+    const playerScore = levelsSurvived;
     return [...baseLeaderboard, { name: "You", score: playerScore, rank: 4 }]
       .sort((a, b) => b.score - a.score)
       .map((entry, index) => ({ ...entry, rank: index + 1 }));
-  }, [armorLevel, weaponLevel]);
+  }, [levelsSurvived]);
 
   const upgradeWeapon = () => {
     const cost = 60 + weaponLevel * 25;
@@ -68,7 +68,7 @@ export default function HomeHub() {
         <div style={styles.panel}>
           <div style={styles.panelHeader}>
             <h2 style={styles.panelTitle}>Leaderboard</h2>
-            <span style={styles.tag}>Top hunters</span>
+            <span style={styles.tag}>Points = levels survived</span>
           </div>
           <div style={{ display: "grid", gap: 10 }}>
             {leaderboard.map((entry) => (
