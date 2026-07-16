@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCurrentUsername } from "./accounts";
+import { supabase } from "@/lib/supabase";
 
 export type PlayerProgress = {
   money: number;
@@ -51,13 +52,24 @@ export function saveProgress(progress: PlayerProgress, username?: string | null)
   }
 
   window.localStorage.setItem(progressKey(username), JSON.stringify(progress));
+  void supabase.auth.getUser().then(({ data }) => {
+    if (!data.user) return;
+    return supabase.from("profiles").update({ money: progress.money, weapon_level: progress.weaponLevel, armor_level: progress.armorLevel, levels_survived: progress.levelsSurvived, tutorial_completed: progress.tutorialCompleted }).eq("id", data.user.id);
+  });
 }
 
 export function usePlayerProgress() {
   const [progress, setProgressState] = useState<PlayerProgress>(defaultProgress);
 
   useEffect(() => {
-    setProgressState(loadProgress());
+    void supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return setProgressState(loadProgress());
+      const { data: remote } = await supabase.from("profiles").select("money, weapon_level, armor_level, levels_survived, tutorial_completed").eq("id", data.user.id).single();
+      if (!remote) return setProgressState(loadProgress());
+      const loaded = { money: remote.money, weaponLevel: remote.weapon_level, armorLevel: remote.armor_level, levelsSurvived: remote.levels_survived, tutorialCompleted: remote.tutorial_completed };
+      saveProgress(loaded);
+      setProgressState(loaded);
+    });
   }, []);
 
   const setProgress = (next: PlayerProgress | ((current: PlayerProgress) => PlayerProgress)) => {

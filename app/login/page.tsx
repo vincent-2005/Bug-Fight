@@ -8,18 +8,20 @@ export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const submit = (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const result = mode === "signup" ? createAccount(username, password) : signIn(username, password);
+    const result = mode === "signup" ? await createAccount(username, email, password) : await signIn(email, password);
     if (result) return setError(result);
     router.push("/");
   };
   return <main style={styles.page}><form style={styles.card} onSubmit={submit}>
     <p style={styles.eyebrow}>BUG BRAWLER ACCOUNT</p><h1 style={styles.title}>{mode === "signup" ? "Create your hunter" : "Welcome back"}</h1>
-    <p style={styles.copy}>Use your own username for the leaderboard and save your progress.</p>
-    <label style={styles.label}>Username<input style={styles.input} value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" required /></label>
+    <p style={styles.copy}>Use your own username for the leaderboard and save your progress across devices.</p>
+    {mode === "signup" && <label style={styles.label}>Username<input style={styles.input} value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" required /></label>}
+    <label style={styles.label}>Email<input style={styles.input} type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required /></label>
     <label style={styles.label}>Password<input style={styles.input} type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} required /></label>
     {error && <p style={styles.error}>{error}</p>}<button style={styles.button}>{mode === "signup" ? "Create account" : "Sign in"}</button>
     <button type="button" style={styles.switch} onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setError(""); }}>{mode === "signup" ? "Already have an account? Sign in" : "Need an account? Sign up"}</button>

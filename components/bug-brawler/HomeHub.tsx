@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { loadProgress, usePlayerProgress } from "./progress";
-import { getAccounts, getCurrentUsername, signOut } from "./accounts";
+import { getCurrentUsername, signOut } from "./accounts";
+import { supabase } from "@/lib/supabase";
 
 type LeaderboardEntry = {
   name: string;
@@ -16,6 +17,7 @@ type LeaderboardEntry = {
 export default function HomeHub() {
   const router = useRouter();
   const [username] = useState(() => getCurrentUsername());
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const { progress, setProgress } = usePlayerProgress();
   const { money, weaponLevel, armorLevel, levelsSurvived } = progress;
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -54,10 +56,8 @@ export default function HomeHub() {
     router.push("/login");
   };
 
-  const leaderboard = useMemo(() => {
-    return getAccounts().map((account) => ({ name: account.username, score: loadProgress(account.username).levelsSurvived, rank: 0 }))
-      .sort((a, b) => b.score - a.score)
-      .map((entry, index) => ({ ...entry, rank: index + 1 }));
+  useEffect(() => {
+    void supabase.from("profiles").select("username, levels_survived").order("levels_survived", { ascending: false }).then(({ data }) => setLeaderboard((data ?? []).map((entry, index) => ({ name: entry.username, score: entry.levels_survived, rank: index + 1 }))));
   }, [levelsSurvived]);
 
   const upgradeWeapon = () => {
