@@ -28,9 +28,24 @@ const mazeLayouts: MazeLayout[] = [
     goal: { x: 6, y: 5 },
   },
   {
-    grid: ["########", "#......#", "#.#.##.#", "#.#....#", "#..##..#", "#......#", "########"],
+    grid: ["############", "#..........#", "##########.#", "#..........#", "#.##########", "#..........#", "##########.#", "#..........#", "#.##########", "#..........#", "############"],
     start: { x: 1, y: 1 },
-    goal: { x: 6, y: 5 },
+    goal: { x: 10, y: 9 },
+  },
+  {
+    grid: ["##############", "#............#", "#.############", "#............#", "############.#", "#............#", "#.############", "#............#", "############.#", "#............#", "#.############", "#............#", "##############"],
+    start: { x: 1, y: 1 },
+    goal: { x: 12, y: 11 },
+  },
+  {
+    grid: ["##############", "#............#", "############.#", "#............#", "#.############", "#............#", "############.#", "#............#", "#.############", "#............#", "############.#", "#............#", "##############"],
+    start: { x: 1, y: 1 },
+    goal: { x: 12, y: 11 },
+  },
+  {
+    grid: ["################", "#..............#", "#.##############", "#..............#", "##############.#", "#..............#", "#.##############", "#..............#", "##############.#", "#..............#", "#.##############", "#..............#", "##############.#", "#..............#", "################"],
+    start: { x: 1, y: 1 },
+    goal: { x: 14, y: 13 },
   },
 ];
 
@@ -41,6 +56,7 @@ export default function MazeRunPage() {
   const [playerPosition, setPlayerPosition] = useState<Position>(maze.start);
   const [gameActive, setGameActive] = useState(false);
   const [status, setStatus] = useState("Start the run and reach the green exit.");
+  const reward = 28 + Math.min(mazeIndex, 6) * 6;
 
   useEffect(() => {
     setPlayerPosition(maze.start);
@@ -73,9 +89,9 @@ export default function MazeRunPage() {
         const next = nextPosition!;
         if (next.x === maze.goal.x && next.y === maze.goal.y) {
           setGameActive(false);
-          addMoney(28);
+          addMoney(reward);
           setMazeIndex((currentIndex) => currentIndex + 1);
-          setStatus("You reached the exit and earned $28. The maze changed!");
+          setStatus(`You reached the exit and earned $${reward}. The maze changed!`);
           return current;
         }
 
@@ -85,7 +101,7 @@ export default function MazeRunPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [addMoney, gameActive, maze.goal, maze.grid, playerPosition]);
+  }, [addMoney, gameActive, maze.goal, maze.grid, playerPosition, reward]);
 
   return (
     <main style={styles.page}>
@@ -105,7 +121,7 @@ export default function MazeRunPage() {
           <div style={styles.statBox}><strong>{mazeIndex + 1}</strong><span>Layout</span></div>
         </div>
 
-        <div style={styles.grid}>
+        <div style={{ ...styles.grid, gridTemplateColumns: `repeat(${maze.grid[0].length}, 1fr)` }}>
           {maze.grid.map((row, rowIndex) =>
             row.split("").map((cell, cellIndex) => {
               const isPlayer = playerPosition.x === cellIndex && playerPosition.y === rowIndex;
@@ -192,9 +208,8 @@ const styles: Record<string, CSSProperties> = {
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(8, 1fr)",
-    gap: 4,
-    width: "min(100%, 360px)",
+    gap: 3,
+    width: "min(100%, 520px)",
     margin: "0 auto",
   },
   tile: {
