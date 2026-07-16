@@ -57,7 +57,12 @@ export default function HomeHub() {
   };
 
   useEffect(() => {
-    void supabase.from("profiles").select("username, levels_survived").order("levels_survived", { ascending: false }).then(({ data }) => setLeaderboard((data ?? []).map((entry, index) => ({ name: entry.username, score: entry.levels_survived, rank: index + 1 }))));
+    const loadLeaderboard = () => {
+      void supabase.from("profiles").select("username, levels_survived").order("levels_survived", { ascending: false }).then(({ data }) => setLeaderboard((data ?? []).map((entry, index) => ({ name: entry.username, score: entry.levels_survived, rank: index + 1 }))));
+    };
+    loadLeaderboard();
+    const refreshTimer = window.setInterval(loadLeaderboard, 10000);
+    return () => window.clearInterval(refreshTimer);
   }, [levelsSurvived]);
 
   const upgradeWeapon = () => {
@@ -105,7 +110,7 @@ export default function HomeHub() {
         <div style={styles.panel}>
           <div style={styles.panelHeader}>
             <h2 style={styles.panelTitle}>Leaderboard</h2>
-            <span style={styles.tag}>All signed-in hunters · points = levels survived</span>
+            <span style={styles.tag}>All registered hunters · points = levels survived</span>
           </div>
           <div style={{ display: "grid", gap: 10 }}>
             {leaderboard.map((entry) => (
