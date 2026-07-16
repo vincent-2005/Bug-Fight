@@ -11,6 +11,20 @@ type Question = {
   answer: number;
 };
 
+type AnswerOption = {
+  label: string;
+  correct: boolean;
+};
+
+const shuffleOptions = (question: Question): AnswerOption[] => {
+  const options = question.options.map((label, index) => ({ label, correct: index === question.answer }));
+  for (let index = options.length - 1; index > 0; index--) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [options[index], options[swapIndex]] = [options[swapIndex], options[index]];
+  }
+  return options;
+};
+
 const questions: Question[] = [
   {
     prompt: "What does CSS stand for?",
@@ -70,19 +84,21 @@ export default function TriviaQuizPage() {
   const [score, setScore] = useState(0);
   const [gameActive, setGameActive] = useState(false);
   const [status, setStatus] = useState("Start a quiz run to earn cash.");
+  const [shuffledOptions, setShuffledOptions] = useState<AnswerOption[]>(() =>
+    questions[0].options.map((label, index) => ({ label, correct: index === questions[0].answer }))
+  );
 
   const startGame = () => {
     setCurrentIndex(0);
     setScore(0);
+    setShuffledOptions(shuffleOptions(questions[0]));
     setGameActive(true);
     setStatus("Pick the correct answer for each round.");
   };
 
-  const answerQuestion = (optionIndex: number) => {
+  const answerQuestion = (isCorrect: boolean) => {
     if (!gameActive) return;
 
-    const question = questions[currentIndex];
-    const isCorrect = optionIndex === question.answer;
     const nextScore = score + (isCorrect ? 1 : 0);
     setScore(nextScore);
 
@@ -97,7 +113,9 @@ export default function TriviaQuizPage() {
       return;
     }
 
-    setCurrentIndex((current) => current + 1);
+    const nextIndex = currentIndex + 1;
+    setCurrentIndex(nextIndex);
+    setShuffledOptions(shuffleOptions(questions[nextIndex]));
     setStatus(isCorrect ? "Correct. Keep the streak going." : "Not quite. Try the next one.");
   };
 
@@ -124,9 +142,9 @@ export default function TriviaQuizPage() {
         <div style={styles.panel}>
           <h2 style={styles.prompt}>{question.prompt}</h2>
           <div style={styles.options}>
-            {question.options.map((option, index) => (
-              <button key={option} style={styles.optionButton} onClick={() => answerQuestion(index)} disabled={!gameActive}>
-                {option}
+            {shuffledOptions.map((option) => (
+              <button key={option.label} style={styles.optionButton} onClick={() => answerQuestion(option.correct)} disabled={!gameActive}>
+                {option.label}
               </button>
             ))}
           </div>

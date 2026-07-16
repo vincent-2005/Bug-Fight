@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePlayerProgress } from "@/components/bug-brawler/progress";
 import { getCurrentUsername } from "@/components/bug-brawler/accounts";
+import { signOut } from "@/components/bug-brawler/accounts";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function ProfilePage() {
     <p style={styles.eyebrow}>EXTERMINATOR ID</p>
     <div style={styles.identity}><div style={styles.avatar}>🐞</div><div><h1 style={styles.title}>Bug Brawler</h1><p style={styles.subtitle}>Hunter profile · keep pushing your best run.</p></div></div>
     <div style={styles.stats}>{stats.map(([label, value, detail]) => <div key={label} style={styles.stat}><small style={styles.label}>{label}</small><strong style={styles.value}>{value}</strong><span style={styles.detail}>{detail}</span></div>)}</div>
-    <div style={styles.actions}><Link href="/play" style={styles.primary}>Continue hunting</Link><Link href="/" style={styles.secondary}>Open Bug Brawler Town</Link></div>
+    <div style={styles.actions}><Link href="/play" style={styles.primary}>Continue hunting</Link><Link href="/" style={styles.secondary}>Open Bug Brawler Town</Link><button style={styles.secondary} onClick={() => { signOut(); router.push("/login"); }}>Switch Player</button></div>
   </section></main>;
 }
 

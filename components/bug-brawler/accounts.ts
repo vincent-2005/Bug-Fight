@@ -36,3 +36,8 @@ export function signIn(username: string, password: string) {
   window.localStorage.setItem(SESSION_KEY, account.username);
   return null;
 }
+
+export function signOut() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(SESSION_KEY);
+}

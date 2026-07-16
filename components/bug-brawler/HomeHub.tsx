@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { loadProgress, usePlayerProgress } from "./progress";
-import { getAccounts, getCurrentUsername } from "./accounts";
+import { getAccounts, getCurrentUsername, signOut } from "./accounts";
 
 type LeaderboardEntry = {
   name: string;
@@ -49,6 +49,11 @@ export default function HomeHub() {
     setShowTutorial(false);
   };
 
+  const switchAccount = () => {
+    signOut();
+    router.push("/login");
+  };
+
   const leaderboard = useMemo(() => {
     return getAccounts().map((account) => ({ name: account.username, score: loadProgress(account.username).levelsSurvived, rank: 0 }))
       .sort((a, b) => b.score - a.score)
@@ -83,6 +88,7 @@ export default function HomeHub() {
             <Link href="/mini-games" style={styles.secondaryButton}>Open arcade</Link>
             <Link href="/profile" style={styles.secondaryButton}>Personal Page</Link>
             {!tutorialFinished && <button style={styles.secondaryButton} onClick={openTutorial}>Watch Tutorial</button>}
+            <button style={styles.secondaryButton} onClick={switchAccount}>Switch Player</button>
           </div>
         </div>
         <div style={styles.moneyCard}>
@@ -99,7 +105,7 @@ export default function HomeHub() {
         <div style={styles.panel}>
           <div style={styles.panelHeader}>
             <h2 style={styles.panelTitle}>Leaderboard</h2>
-            <span style={styles.tag}>Points = levels survived</span>
+            <span style={styles.tag}>All signed-in hunters · points = levels survived</span>
           </div>
           <div style={{ display: "grid", gap: 10 }}>
             {leaderboard.map((entry) => (
