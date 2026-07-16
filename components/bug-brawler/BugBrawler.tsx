@@ -182,7 +182,7 @@ export default function Home() {
           if (e.kind === "Cicada" && g.clock % 75 === 0) p.webbed = Math.max(p.webbed, 55);
         });
         g.enemies = g.enemies.filter(e => { if (e.hp > 0) return true; p.cash += e.cash; return false; });
-        if (p.hp <= 0) { const progress = loadProgress(); p.hp = 0; saveProgress({ ...progress, levelsSurvived: Math.max(progress.levelsSurvived, g.wave - 1) }); g.status = "lost"; g.notice = "THE SWARM OVERRAN THE BLOCK"; sync(); } else if (g.enemies.length === 0 && g.spawned === target) { p.cash += 35 + g.wave * 8; g.status = "shop"; g.notice = `WAVE ${g.wave} CLEAR · +$${35 + g.wave * 8} BONUS`; sync(); }
+        if (p.hp <= 0) { const progress = loadProgress(); const earnedCash = Math.max(0, p.cash - 80); p.hp = 0; saveProgress({ ...progress, money: progress.money + earnedCash, levelsSurvived: Math.max(progress.levelsSurvived, g.wave - 1) }); g.status = "lost"; g.notice = `THE SWARM OVERRAN THE BLOCK · +$${earnedCash} TO YOUR WALLET`; sync(); } else if (g.enemies.length === 0 && g.spawned === target) { p.cash += 35 + g.wave * 8; g.status = "shop"; g.notice = `WAVE ${g.wave} CLEAR · +$${35 + g.wave * 8} BONUS`; sync(); }
         if (g.clock % 10 === 0) sync();
       }
       const thirdPerson = true;
