@@ -18,6 +18,7 @@ export default function HomeHub() {
   const router = useRouter();
   const [username] = useState(() => getCurrentUsername());
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardError, setLeaderboardError] = useState("");
   const { progress, setProgress } = usePlayerProgress();
   const { money, weaponLevel, armorLevel, levelsSurvived } = progress;
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -58,7 +59,11 @@ export default function HomeHub() {
 
   useEffect(() => {
     const loadLeaderboard = () => {
-      void supabase.from("profiles").select("username, levels_survived").order("levels_survived", { ascending: false }).then(({ data }) => setLeaderboard((data ?? []).map((entry, index) => ({ name: entry.username, score: entry.levels_survived, rank: index + 1 }))));
+      void supabase.from("profiles").select("username, levels_survived").order("levels_survived", { ascending: false }).then(({ data, error }) => {
+        if (error) return setLeaderboardError(error.message);
+        setLeaderboardError("");
+        setLeaderboard((data ?? []).map((entry, index) => ({ name: entry.username, score: entry.levels_survived, rank: index + 1 })));
+      });
     };
     loadLeaderboard();
     const refreshTimer = window.setInterval(loadLeaderboard, 10000);
@@ -121,6 +126,8 @@ export default function HomeHub() {
                 <div style={{ color: "#9ef4ff" }}>{entry.score} pts</div>
               </div>
             ))}
+            {leaderboard.length === 0 && !leaderboardError && <p style={styles.cardText}>No registered hunters have appeared yet.</p>}
+            {leaderboardError && <p style={{ ...styles.cardText, color: "#ffaaaa" }}>Leaderboard error: {leaderboardError}</p>}
           </div>
         </div>
 
