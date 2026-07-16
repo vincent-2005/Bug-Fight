@@ -11,9 +11,9 @@ export type PlayerProgress = {
 const STORAGE_KEY = "bug-brawler-progress";
 
 export const defaultProgress: PlayerProgress = {
-  money: 140,
-  weaponLevel: 1,
-  armorLevel: 1,
+  money: 0,
+  weaponLevel: 0,
+  armorLevel: 0,
   levelsSurvived: 0,
   tutorialCompleted: false,
 };
@@ -32,8 +32,8 @@ export function loadProgress(): PlayerProgress {
     const parsed = JSON.parse(raw) as Partial<PlayerProgress>;
     return {
       money: Math.max(0, Number(parsed.money ?? defaultProgress.money)),
-      weaponLevel: Math.max(1, Number(parsed.weaponLevel ?? defaultProgress.weaponLevel)),
-      armorLevel: Math.max(1, Number(parsed.armorLevel ?? defaultProgress.armorLevel)),
+      weaponLevel: Math.max(0, Number(parsed.weaponLevel ?? defaultProgress.weaponLevel)),
+      armorLevel: Math.max(0, Number(parsed.armorLevel ?? defaultProgress.armorLevel)),
       levelsSurvived: Math.max(0, Math.floor(Number(parsed.levelsSurvived ?? defaultProgress.levelsSurvived))),
       tutorialCompleted: Boolean(parsed.tutorialCompleted ?? defaultProgress.tutorialCompleted),
     };
@@ -62,8 +62,8 @@ export function usePlayerProgress() {
       const resolved = typeof next === "function" ? next(current) : next;
       const safe = {
         money: Math.max(0, resolved.money),
-        weaponLevel: Math.max(1, resolved.weaponLevel),
-        armorLevel: Math.max(1, resolved.armorLevel),
+        weaponLevel: Math.max(0, resolved.weaponLevel),
+        armorLevel: Math.max(0, resolved.armorLevel),
         levelsSurvived: Math.max(0, Math.floor(resolved.levelsSurvived)),
         tutorialCompleted: Boolean(resolved.tutorialCompleted),
       };
