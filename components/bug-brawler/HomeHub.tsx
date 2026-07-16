@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { loadProgress, usePlayerProgress } from "./progress";
+import { getAccounts, getCurrentUsername } from "./accounts";
 
 type LeaderboardEntry = {
   name: string;
@@ -11,13 +13,9 @@ type LeaderboardEntry = {
   rank: number;
 };
 
-const baseLeaderboard: LeaderboardEntry[] = [
-  { name: "Astra", score: 28, rank: 1 },
-  { name: "Kade", score: 21, rank: 2 },
-  { name: "Mina", score: 17, rank: 3 },
-];
-
 export default function HomeHub() {
+  const router = useRouter();
+  const [username] = useState(() => getCurrentUsername());
   const { progress, setProgress } = usePlayerProgress();
   const { money, weaponLevel, armorLevel, levelsSurvived } = progress;
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -35,6 +33,10 @@ export default function HomeHub() {
     { title: "Use your personal profile", text: "Your Profile shows your best score, cash, weapon level, and armor level. It is linked from the top-right corner inside Bug Brawler." },
   ];
 
+  useEffect(() => {
+    if (!username) router.replace("/login");
+  }, [router, username]);
+
   const openTutorial = () => {
     if (tutorialFinished) return;
     setTutorialStep(0);
@@ -48,8 +50,7 @@ export default function HomeHub() {
   };
 
   const leaderboard = useMemo(() => {
-    const playerScore = levelsSurvived;
-    return [...baseLeaderboard, { name: "You", score: playerScore, rank: 4 }]
+    return getAccounts().map((account) => ({ name: account.username, score: loadProgress(account.username).levelsSurvived, rank: 0 }))
       .sort((a, b) => b.score - a.score)
       .map((entry, index) => ({ ...entry, rank: index + 1 }));
   }, [levelsSurvived]);
@@ -66,12 +67,14 @@ export default function HomeHub() {
     setProgress((current) => ({ ...current, money: current.money - cost, armorLevel: current.armorLevel + 1 }));
   };
 
+  if (!username) return null;
+
   return (
     <main style={styles.page}>
       <section style={styles.hero}>
         <div>
           <p style={styles.eyebrow}>ARCADE HUB</p>
-          <h1 style={styles.title}>Bug Brawler Town</h1>
+          <h1 style={styles.title}>Bug Brawler Town{username ? ` · ${username}` : ""}</h1>
           <p style={styles.subtitle}>
             Climb the leaderboard, upgrade your gear, and grind mini-games for cash to make your bug hunt stronger.
           </p>

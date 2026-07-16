@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { usePlayerProgress } from "@/components/bug-brawler/progress";
+import { getCurrentUsername } from "@/components/bug-brawler/accounts";
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const [username] = useState(() => getCurrentUsername());
   const { progress } = usePlayerProgress();
   const stats = [
     ["BEST SCORE", `${progress.levelsSurvived} pts`, "levels survived"],
@@ -12,6 +17,12 @@ export default function ProfilePage() {
     ["WEAPON", `Lv ${progress.weaponLevel}`, "weapon core"],
     ["ARMOR", `Lv ${progress.armorLevel}`, "armor shell"],
   ];
+
+  useEffect(() => {
+    if (!username) router.replace("/login");
+  }, [router, username]);
+
+  if (!username) return null;
 
   return <main style={styles.page}><section style={styles.card}>
     <p style={styles.eyebrow}>EXTERMINATOR ID</p>

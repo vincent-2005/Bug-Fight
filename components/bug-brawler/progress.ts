@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getCurrentUsername } from "./accounts";
 
 export type PlayerProgress = {
   money: number;
@@ -18,13 +19,15 @@ export const defaultProgress: PlayerProgress = {
   tutorialCompleted: false,
 };
 
-export function loadProgress(): PlayerProgress {
+const progressKey = (username = getCurrentUsername()) => username ? `${STORAGE_KEY}:${username}` : STORAGE_KEY;
+
+export function loadProgress(username?: string | null): PlayerProgress {
   if (typeof window === "undefined") {
     return defaultProgress;
   }
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(progressKey(username));
     if (!raw) {
       return defaultProgress;
     }
@@ -42,12 +45,12 @@ export function loadProgress(): PlayerProgress {
   }
 }
 
-export function saveProgress(progress: PlayerProgress) {
+export function saveProgress(progress: PlayerProgress, username?: string | null) {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  window.localStorage.setItem(progressKey(username), JSON.stringify(progress));
 }
 
 export function usePlayerProgress() {

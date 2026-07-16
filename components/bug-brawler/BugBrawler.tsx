@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { loadProgress, saveProgress } from "./progress";
+import { getCurrentUsername } from "./accounts";
 
 const W = 960, H = 560, WORLD_W = 2400, WORLD_H = 1600;
 type EnemyKind = "Grubbin" | "Zippa" | "Silk" | "Formica" | "Lumen" | "Chomp" | "Roly" | "Skitters" | "Rex" | "Cicada" | "Queen";
@@ -74,12 +75,17 @@ const toolbarIcons: Record<string, { icon: string; label: string; color: string 
 
 export default function Home() {
   const router = useRouter();
+  const [username] = useState(() => getCurrentUsername());
   const canvas = useRef<HTMLCanvasElement>(null); const keys = useRef<Record<string, boolean>>({}); const lookAngle = useRef(-Math.PI / 2); const aim = useRef({ x: WORLD_W / 2, y: WORLD_H / 2, fire: false }); const aimDot = useRef({ x: W / 2, y: H * .6 }); const game = useRef<Game>(initial());
   const [screen, setScreen] = useState({ cash: 80, hp: 100, ammo: -1, wave: 1, map: 0, status: "playing" as Game["status"], weapon: "newspaper", notice: "WAVE 1 · CLEAR THE GARDEN", shield: 0, toolbar: [null, null, null, null, null, null] as ToolbarSlot[], activeSlot: 0 });
   const [tutorialState, setTutorialState] = useState<"open" | "complete">(() =>
     loadProgress().tutorialCompleted ? "complete" : "open"
   );
   const [tutorialStep, setTutorialStep] = useState(0);
+
+  useEffect(() => {
+    if (!username) router.replace("/login");
+  }, [router, username]);
 
   const finishTutorial = () => {
     const progress = loadProgress();
@@ -228,6 +234,8 @@ export default function Home() {
   // Shield bar style
   const shieldBarStyle = { width: `${Math.min(100, screen.shield)}%` };
   const shieldActive = screen.shield > 0;
+
+  if (!username) return null;
 
   return <main className="shell"><section className="cabinet"><header><div className="logo"><span>⚔</span><div><small>EXTERMINATOR ARCADE SYSTEM</small><h1>BUG BRAWLER</h1></div></div><div className="header-actions"><Link href="/profile" className="profile-link">PROFILE</Link><div className="cash">CASH <b>${screen.cash}</b></div></div></header><div className="stats"><div><small>MAP</small><b>{String(screen.map+1).padStart(2,"0")} <i>{maps[screen.map % maps.length].name}</i></b></div><div><small>WAVE</small><b>{screen.wave} <i>∞</i></b></div><div className="vitals"><small>HUNTER VITALS</small>
         <span><em style={{width:`${screen.hp}%`}}/></span>
