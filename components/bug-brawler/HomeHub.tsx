@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { usePlayerProgress } from "./progress";
+import { loadProgress, usePlayerProgress } from "./progress";
 
 type LeaderboardEntry = {
   name: string;
@@ -22,6 +22,9 @@ export default function HomeHub() {
   const { money, weaponLevel, armorLevel, levelsSurvived } = progress;
   const [tutorialStep, setTutorialStep] = useState(0);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialFinished, setTutorialFinished] = useState(() =>
+    typeof window !== "undefined" && loadProgress().tutorialCompleted
+  );
   const tutorial = [
     { title: "Welcome to Bug Brawler Town", text: "This is your home base. Your cash, upgrades, best survival score, and arcade games all connect here." },
     { title: "Bug Brawler controls", text: "Choose Launch Bug Brawler to enter the hunt. Move with WASD or arrow keys, aim with the mouse, attack with click or Space, turn with Q/E, and press F for a quick 180° turn." },
@@ -33,8 +36,15 @@ export default function HomeHub() {
   ];
 
   const openTutorial = () => {
+    if (tutorialFinished) return;
     setTutorialStep(0);
     setShowTutorial(true);
+  };
+
+  const finishTutorial = () => {
+    setProgress((current) => ({ ...current, tutorialCompleted: true }));
+    setTutorialFinished(true);
+    setShowTutorial(false);
   };
 
   const leaderboard = useMemo(() => {
@@ -69,7 +79,7 @@ export default function HomeHub() {
             <Link href="/play" style={styles.primaryButton}>Launch Bug Brawler</Link>
             <Link href="/mini-games" style={styles.secondaryButton}>Open arcade</Link>
             <Link href="/profile" style={styles.secondaryButton}>Personal Page</Link>
-            <button style={styles.secondaryButton} onClick={openTutorial}>Watch Tutorial</button>
+            {!tutorialFinished && <button style={styles.secondaryButton} onClick={openTutorial}>Watch Tutorial</button>}
           </div>
         </div>
         <div style={styles.moneyCard}>
@@ -143,7 +153,7 @@ export default function HomeHub() {
         <p className="eyebrow">BUG BRAWLER GUIDE · {tutorialStep + 1}/{tutorial.length}</p>
         <h2>{tutorial[tutorialStep].title}</h2>
         <p>{tutorial[tutorialStep].text}</p>
-        <button className="continue" onClick={() => tutorialStep === tutorial.length - 1 ? setShowTutorial(false) : setTutorialStep((step) => step + 1)}>
+        <button className="continue" onClick={() => tutorialStep === tutorial.length - 1 ? finishTutorial() : setTutorialStep((step) => step + 1)}>
           {tutorialStep === tutorial.length - 1 ? "CLOSE TUTORIAL" : "NEXT →"}
         </button>
       </div></div>}

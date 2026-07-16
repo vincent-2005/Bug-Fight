@@ -76,7 +76,9 @@ export default function Home() {
   const router = useRouter();
   const canvas = useRef<HTMLCanvasElement>(null); const keys = useRef<Record<string, boolean>>({}); const lookAngle = useRef(-Math.PI / 2); const aim = useRef({ x: WORLD_W / 2, y: WORLD_H / 2, fire: false }); const aimDot = useRef({ x: W / 2, y: H * .6 }); const game = useRef<Game>(initial());
   const [screen, setScreen] = useState({ cash: 80, hp: 100, ammo: -1, wave: 1, map: 0, status: "playing" as Game["status"], weapon: "newspaper", notice: "WAVE 1 · CLEAR THE GARDEN", shield: 0, toolbar: [null, null, null, null, null, null] as ToolbarSlot[], activeSlot: 0 });
-  const [tutorialState, setTutorialState] = useState<"open" | "complete">("open");
+  const [tutorialState, setTutorialState] = useState<"open" | "complete">(() =>
+    loadProgress().tutorialCompleted ? "complete" : "open"
+  );
   const [tutorialStep, setTutorialStep] = useState(0);
 
   const finishTutorial = () => {
