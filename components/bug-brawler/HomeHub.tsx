@@ -1,26 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { loadProgress, usePlayerProgress } from "./progress";
 import { getCurrentUsername, signOut } from "./accounts";
-import { supabase } from "@/lib/supabase";
-
-type LeaderboardEntry = {
-  name: string;
-  score: number;
-  rank: number;
-};
 
 export default function HomeHub() {
   const router = useRouter();
   const [username] = useState(() => getCurrentUsername());
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [leaderboardError, setLeaderboardError] = useState("");
   const { progress, setProgress } = usePlayerProgress();
-  const { money, weaponLevel, armorLevel, levelsSurvived } = progress;
+  const { money, weaponLevel, armorLevel } = progress;
   const [tutorialStep, setTutorialStep] = useState(0);
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialFinished, setTutorialFinished] = useState(() =>
@@ -30,7 +21,7 @@ export default function HomeHub() {
     { title: "Welcome to Bug Brawler Town", text: "This is your home base. Your cash, upgrades, best survival score, and arcade games all connect here." },
     { title: "Bug Brawler controls", text: "Choose Launch Bug Brawler to enter the hunt. Move with WASD or arrow keys, aim with the mouse, attack with click or Space, turn with Q/E, and press F for a quick 180° turn." },
     { title: "Survive each wave", text: "Keep enemies away from your health bar. Walk over crates for supplies, med kits, shields, and boosts; use equipped toolbar items with keys 1–6. Clear a wave to reach the shop." },
-    { title: "Climb the leaderboard", text: "Your points equal your highest number of completed levels survived. Beat your best run to move up the rankings—cash does not affect leaderboard points." },
+    { title: "Track your best survival run", text: "Your personal profile records your highest number of completed levels survived. Cash does not affect this score." },
     { title: "Spend cash on upgrades", text: "Use the Upgrade Shop here to raise Weapon Core and Armor Shell levels. Stronger gear helps you hold out longer in Bug Brawler." },
     { title: "Earn cash in mini-games", text: "Open the arcade for extra challenges, including the shooting range and obby. Complete games to earn cash, then return here to buy upgrades." },
     { title: "Use your personal profile", text: "Your Profile shows your best score, cash, weapon level, and armor level. It is linked from the top-right corner inside Bug Brawler." },
@@ -57,19 +48,6 @@ export default function HomeHub() {
     router.push("/login");
   };
 
-  useEffect(() => {
-    const loadLeaderboard = () => {
-      void supabase.from("profiles").select("username, levels_survived").order("levels_survived", { ascending: false }).then(({ data, error }) => {
-        if (error) return setLeaderboardError(error.message);
-        setLeaderboardError("");
-        setLeaderboard((data ?? []).map((entry, index) => ({ name: entry.username, score: entry.levels_survived, rank: index + 1 })));
-      });
-    };
-    loadLeaderboard();
-    const refreshTimer = window.setInterval(loadLeaderboard, 10000);
-    return () => window.clearInterval(refreshTimer);
-  }, [levelsSurvived]);
-
   const upgradeWeapon = () => {
     const cost = 60 + weaponLevel * 25;
     if (money < cost) return;
@@ -91,7 +69,7 @@ export default function HomeHub() {
           <p style={styles.eyebrow}>ARCADE HUB</p>
           <h1 style={styles.title}>Bug Brawler Town{username ? ` · ${username}` : ""}</h1>
           <p style={styles.subtitle}>
-            Climb the leaderboard, upgrade your gear, and grind mini-games for cash to make your bug hunt stronger.
+            Upgrade your gear, track your best survival run, and grind mini-games for cash to make your bug hunt stronger.
           </p>
           <div style={styles.buttonRow}>
             <Link href="/play" style={styles.primaryButton}>Launch Bug Brawler</Link>
@@ -112,25 +90,6 @@ export default function HomeHub() {
       </section>
 
       <section style={styles.grid}>
-        <div style={styles.panel}>
-          <div style={styles.panelHeader}>
-            <h2 style={styles.panelTitle}>Leaderboard</h2>
-            <span style={styles.tag}>All registered hunters · points = levels survived</span>
-          </div>
-          <div style={{ display: "grid", gap: 10 }}>
-            {leaderboard.map((entry) => (
-              <div key={entry.name} style={styles.leaderRow}>
-                <div>
-                  <strong>{entry.rank}. {entry.name}</strong>
-                </div>
-                <div style={{ color: "#9ef4ff" }}>{entry.score} pts</div>
-              </div>
-            ))}
-            {leaderboard.length === 0 && !leaderboardError && <p style={styles.cardText}>No registered hunters have appeared yet.</p>}
-            {leaderboardError && <p style={{ ...styles.cardText, color: "#ffaaaa" }}>Leaderboard error: {leaderboardError}</p>}
-          </div>
-        </div>
-
         <div style={styles.panel}>
           <div style={styles.panelHeader}>
             <h2 style={styles.panelTitle}>Upgrade Shop</h2>
