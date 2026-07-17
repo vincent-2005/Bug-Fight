@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { usePlayerProgress } from "@/components/bug-brawler/progress";
 
@@ -128,6 +128,7 @@ export default function MazeRunPage() {
   const [finished, setFinished] = useState(false);
   const [caught, setCaught] = useState(false);
   const [status, setStatus] = useState("Start the run and reach the green exit.");
+  const playerMoveCount = useRef(0);
   const reward = 28 + Math.min(mazeIndex, mazeLayouts.length - 1) * 6;
 
   const startGame = () => {
@@ -136,7 +137,8 @@ export default function MazeRunPage() {
     setGameActive(true);
     setFinished(false);
     setCaught(false);
-    setStatus("Reach the exit before the cop catches you.");
+    playerMoveCount.current = 0;
+    setStatus("Reach the exit before the cop catches you. The cop moves every second turn.");
   };
   const nextLevel = () => {
     const nextIndex = (mazeIndex + 1) % mazeLayouts.length;
@@ -145,6 +147,7 @@ export default function MazeRunPage() {
     setCopPosition(mazeLayouts[nextIndex].goal);
     setFinished(false);
     setCaught(false);
+    playerMoveCount.current = 0;
     setGameActive(true);
     setStatus(`Maze ${nextIndex + 1} of ${mazeLayouts.length}: escape the cop.`);
   };
@@ -175,9 +178,10 @@ export default function MazeRunPage() {
         setFinished(true);
         return;
       }
-      const nextCop = nextChaserStep(maze.grid, copPosition, next);
-      setCopPosition(nextCop);
-      if (nextCop.x === next.x && nextCop.y === next.y) {
+      playerMoveCount.current += 1;
+      const nextCop = playerMoveCount.current % 2 === 0 ? nextChaserStep(maze.grid, copPosition, next) : copPosition;
+      if (playerMoveCount.current % 2 === 0) setCopPosition(nextCop);
+      if (nextCop.x === next.x && nextCop.y === next.y && playerMoveCount.current % 2 === 0) {
         setGameActive(false);
         setCaught(true);
         setStatus("The cop caught you. Try again.");
