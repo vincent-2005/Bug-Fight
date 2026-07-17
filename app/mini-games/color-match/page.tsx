@@ -31,6 +31,8 @@ export default function ColorMatchPage() {
   const [misses, setMisses] = useState(0);
   const [timeLeft, setTimeLeft] = useState(16);
   const [gameActive, setGameActive] = useState(false);
+  const [result, setResult] = useState<"time" | "perfect" | null>(null);
+  const [lastReward, setLastReward] = useState(0);
   const [status, setStatus] = useState("Start the timer and smash the matching tiles.");
 
   const startGame = () => {
@@ -41,6 +43,8 @@ export default function ColorMatchPage() {
     setMisses(0);
     setTimeLeft(16);
     setGameActive(true);
+    setResult(null);
+    setLastReward(0);
     setStatus("Find either exact match. The other tiles are close, but not a match.");
   };
 
@@ -55,6 +59,8 @@ export default function ColorMatchPage() {
           const reward = 35 + hits * 8;
           setStatus(`Time is up! You scored ${hits} hits. Reward: $${reward}.`);
           addMoney(reward);
+          setLastReward(reward);
+          setResult("time");
           return 0;
         }
         return current - 1;
@@ -75,6 +81,8 @@ export default function ColorMatchPage() {
         setGameActive(false);
         setStatus(`Perfect run! You earned $${reward}.`);
         addMoney(reward);
+        setLastReward(reward);
+        setResult("perfect");
         return;
       }
       const nextTarget = palette[(palette.indexOf(targetColor) + nextHits) % palette.length];
@@ -121,6 +129,18 @@ export default function ColorMatchPage() {
           <p style={styles.statusText}>{status}</p>
         </div>
         <p style={styles.wallet}>Wallet: ${playerProgress.money}</p>
+
+        {result && (
+          <div style={styles.resultOverlay} role="dialog" aria-modal="true" aria-labelledby="result-title">
+            <div style={styles.resultCard}>
+              <p style={styles.resultEyebrow}>{result === "perfect" ? "COLOR MATCH COMPLETE" : "ROUND COMPLETE"}</p>
+              <h2 id="result-title" style={styles.resultTitle}>{result === "perfect" ? "Perfect Run!" : "Time’s Up"}</h2>
+              <p style={styles.resultText}>{result === "perfect" ? "You found every exact match." : `You found ${hits} exact matches.`}</p>
+              <p style={styles.resultReward}>+${lastReward}</p>
+              <button style={styles.button} onClick={startGame}>Play again</button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
@@ -242,5 +262,45 @@ const styles: Record<string, CSSProperties> = {
     marginTop: 10,
     color: "#8fe4a7",
     fontWeight: 700,
+  },
+  resultOverlay: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 10,
+    display: "grid",
+    placeItems: "center",
+    padding: 24,
+    background: "rgba(4, 7, 14, 0.74)",
+    backdropFilter: "blur(7px)",
+  },
+  resultCard: {
+    width: "min(390px, 100%)",
+    padding: 30,
+    borderRadius: 22,
+    textAlign: "center",
+    background: "linear-gradient(145deg, #202446, #11172d)",
+    border: "1px solid rgba(245,177,255,0.55)",
+    boxShadow: "0 28px 80px rgba(0,0,0,0.55)",
+  },
+  resultEyebrow: {
+    margin: 0,
+    color: "#f2bdff",
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.18em",
+  },
+  resultTitle: {
+    margin: "10px 0 8px",
+    fontSize: "clamp(2rem, 8vw, 2.8rem)",
+  },
+  resultText: {
+    margin: 0,
+    color: "#c9daed",
+  },
+  resultReward: {
+    margin: "18px 0",
+    color: "#8fe4a7",
+    fontSize: 28,
+    fontWeight: 800,
   },
 };
