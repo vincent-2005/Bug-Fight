@@ -115,7 +115,7 @@ export default function BlackjackPage() {
     setDealerHand(dealerFinal);
     setPhase("revealing");
     setStatus(`Dealer reveals ${getHandScore(dealerFinal)}. Checking the hand…`);
-    window.setTimeout(() => finishRound(playerFinal, dealerFinal), 900);
+    window.setTimeout(() => finishRound(playerFinal, dealerFinal), 5000);
   };
 
   const hit = () => {
