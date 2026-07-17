@@ -150,6 +150,18 @@ function createEasyMaze(width: number, height: number, variant: number) {
       for (let x = centerX - 2; x <= centerX + 2; x++) block(x, centerY - 2);
       break;
   }
+  if (width >= 20) {
+    for (let y = 3; y <= 4; y++) for (let x = 3; x <= 4; x++) block(x, y);
+    for (let y = height - 5; y <= height - 4; y++) for (let x = width - 5; x <= width - 4; x++) block(x, y);
+  }
+  if (width >= 24) {
+    for (let y = centerY - 1; y <= centerY + 1; y++) block(3, y);
+    for (let y = centerY - 1; y <= centerY + 1; y++) block(width - 4, y);
+  }
+  if (width >= 28) {
+    for (let x = centerX - 1; x <= centerX + 1; x++) block(x, 3);
+    for (let x = centerX - 1; x <= centerX + 1; x++) block(x, height - 4);
+  }
   return grid.map((row) => row.join(""));
 }
 
