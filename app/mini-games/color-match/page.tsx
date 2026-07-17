@@ -17,7 +17,7 @@ function createBoard(target: string) {
   const targetIndex = Math.floor(Math.random() * 16);
   return Array.from({ length: 16 }, (_, index) => {
     if (index === targetIndex) return target;
-    const amount = [-34, -22, -13, 12, 21, 32][Math.floor(Math.random() * 6)];
+    const amount = [-48, -31, -18, 17, 30, 45][Math.floor(Math.random() * 6)];
     return shade(target, amount);
   });
 }
@@ -28,7 +28,7 @@ export default function ColorMatchPage() {
   const [board, setBoard] = useState<string[]>([]);
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(12);
+  const [timeLeft, setTimeLeft] = useState(14);
   const [gameActive, setGameActive] = useState(false);
   const [status, setStatus] = useState("Start the timer and smash the matching tiles.");
 
@@ -38,7 +38,7 @@ export default function ColorMatchPage() {
     setBoard(createBoard(nextTarget));
     setHits(0);
     setMisses(0);
-    setTimeLeft(12);
+    setTimeLeft(14);
     setGameActive(true);
     setStatus("Find the one exact shade. The other tiles are close, but not a match.");
   };
