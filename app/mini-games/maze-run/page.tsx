@@ -115,11 +115,13 @@ const mazeLayouts: MazeLayout[] = [
     goal: { x: 26, y: 19 },
   },
 ];
+const mapThemes = ["#38bdf8", "#a78bfa", "#fb7185", "#facc15", "#34d399", "#f97316"];
 
 export default function MazeRunPage() {
   const { progress: playerProgress, addMoney } = usePlayerProgress();
   const [mazeIndex, setMazeIndex] = useState(0);
   const maze = mazeLayouts[mazeIndex % mazeLayouts.length];
+  const mapTheme = mapThemes[mazeIndex % mapThemes.length];
   const [playerPosition, setPlayerPosition] = useState<Position>(maze.start);
   const [copPosition, setCopPosition] = useState<Position>(maze.goal);
   const [gameActive, setGameActive] = useState(false);
@@ -205,7 +207,11 @@ export default function MazeRunPage() {
           <div style={styles.statBox}><strong>{mazeIndex + 1} / {mazeLayouts.length}</strong><span>Map</span></div>
         </div>
 
-        <div style={{ ...styles.grid, gridTemplateColumns: `repeat(${maze.grid[0].length}, 1fr)` }}>
+        <div style={{ ...styles.mapBanner, borderColor: mapTheme }}>
+          <span>MAP {mazeIndex + 1} / {mazeLayouts.length}</span>
+          <b style={{ color: mapTheme }}>COP PURSUIT</b>
+        </div>
+        <div key={mazeIndex} style={{ ...styles.grid, gridTemplateColumns: `repeat(${maze.grid[0].length}, 1fr)`, borderColor: mapTheme }}>
           {maze.grid.map((row, rowIndex) =>
             row.split("").map((cell, cellIndex) => {
               const isPlayer = playerPosition.x === cellIndex && playerPosition.y === rowIndex;
@@ -297,6 +303,26 @@ const styles: Record<string, CSSProperties> = {
     gap: 3,
     width: "min(100%, 520px)",
     margin: "0 auto",
+    padding: 5,
+    border: "2px solid",
+    borderRadius: 12,
+    background: "#0b1220",
+  },
+  mapBanner: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    width: "min(100%, 520px)",
+    margin: "0 auto 10px",
+    padding: "9px 12px",
+    borderLeft: "4px solid",
+    borderRadius: 8,
+    background: "rgba(255,255,255,0.05)",
+    color: "#c9daed",
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.12em",
   },
   tile: {
     aspectRatio: "1",
