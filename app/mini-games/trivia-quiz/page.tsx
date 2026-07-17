@@ -169,7 +169,10 @@ export default function TriviaQuizPage() {
               <h2 id="trivia-result-title" style={styles.resultTitle}>{score >= 7 ? "Great Run!" : "Quiz Finished"}</h2>
               <p style={styles.resultText}>You got {score} out of {questions.length} questions correct.</p>
               <p style={styles.resultReward}>{reward > 0 ? `+$${reward}` : "Try again for a payout"}</p>
-              <button style={styles.button} onClick={startGame}>Play again</button>
+              <div style={styles.resultActions}>
+                <button style={styles.button} onClick={startGame}>Play again</button>
+                <Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link>
+              </div>
             </div>
           </div>
         )}
@@ -306,4 +309,6 @@ const styles: Record<string, CSSProperties> = {
   resultTitle: { margin: "10px 0 8px", fontSize: "clamp(2rem, 8vw, 2.8rem)" },
   resultText: { margin: 0, color: "#c9daed" },
   resultReward: { margin: "18px 0", color: "#8fe4a7", fontSize: 24, fontWeight: 800 },
+  resultActions: { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" },
+  arcadeButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", color: "#f6fbff", textDecoration: "none", fontWeight: 700 },
 };

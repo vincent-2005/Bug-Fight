@@ -12,6 +12,7 @@ const levels: Record<Difficulty, { label: string; tiles: number; matches: number
   medium: { label: "Medium", tiles: 16, matches: 1, time: 14, goal: 10, shades: [-33, -22, -13, 12, 21, 32] },
   hard: { label: "Hard", tiles: 16, matches: 1, time: 11, goal: 12, shades: [-18, -11, -6, 6, 11, 18] },
 };
+const difficultyOrder: Difficulty[] = ["easy", "medium", "hard"];
 
 function shade(hex: string, amount: number) {
   const value = Number.parseInt(hex.slice(1), 16);
@@ -62,6 +63,13 @@ export default function ColorMatchPage() {
     setLastReward(0);
     setStatus(`Find ${nextLevel.matches === 1 ? "the one exact match" : "either exact match"} before time runs out.`);
   };
+  const launchLevel = (nextDifficulty: Difficulty) => {
+    difficultyRef.current = nextDifficulty;
+    levelRef.current = levels[nextDifficulty];
+    startGame();
+  };
+  const nextDifficulty = difficultyOrder[Math.min(difficultyOrder.indexOf(difficulty) + 1, difficultyOrder.length - 1)];
+  const previousDifficulty = difficultyOrder[Math.max(difficultyOrder.indexOf(difficulty) - 1, 0)];
 
   useEffect(() => {
     if (!gameActive) return;
@@ -130,7 +138,7 @@ export default function ColorMatchPage() {
 
         <div style={styles.levelRow} aria-label="Choose difficulty">
           {(Object.keys(levels) as Difficulty[]).map((option) => (
-            <button key={option} style={{ ...styles.levelButton, ...(difficulty === option ? styles.levelButtonActive : {}) }} onClick={() => { difficultyRef.current = option; levelRef.current = levels[option]; startGame(); }} disabled={gameActive}>
+            <button key={option} style={{ ...styles.levelButton, ...(difficulty === option ? styles.levelButtonActive : {}) }} onClick={() => launchLevel(option)} disabled={gameActive}>
               {levels[option].label}
             </button>
           ))}
@@ -167,7 +175,12 @@ export default function ColorMatchPage() {
               <h2 id="result-title" style={styles.resultTitle}>{result === "perfect" ? "Perfect Run!" : "Time’s Up"}</h2>
               <p style={styles.resultText}>{result === "perfect" ? "You found every exact match." : `You found ${hits} exact matches.`}</p>
               <p style={styles.resultReward}>+${lastReward}</p>
-              <button style={styles.button} onClick={startGame}>Play again</button>
+              <div style={styles.resultActions}>
+                <button style={styles.button} onClick={() => launchLevel(difficulty)}>Play again</button>
+                <button style={styles.secondaryResultButton} onClick={() => launchLevel(nextDifficulty)}>Proceed to next level</button>
+                <button style={styles.secondaryResultButton} onClick={() => launchLevel(previousDifficulty)}>Go down one level</button>
+                <Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link>
+              </div>
             </div>
           </div>
         )}
@@ -380,4 +393,7 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 28,
     fontWeight: 800,
   },
+  resultActions: { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" },
+  secondaryResultButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", background: "rgba(255,255,255,0.08)", color: "#f6fbff", fontWeight: 700, cursor: "pointer" },
+  arcadeButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", color: "#f6fbff", textDecoration: "none", fontWeight: 700 },
 };

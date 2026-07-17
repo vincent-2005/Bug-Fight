@@ -21,6 +21,7 @@ const levels: Record<Difficulty, { label: string; time: number; speed: number; s
   medium: { label: "Medium", time: 15, speed: 11, spawnChance: .28, reward: 50 },
   hard: { label: "Hard", time: 18, speed: 15, spawnChance: .38, reward: 75 },
 };
+const difficultyOrder: Difficulty[] = ["easy", "medium", "hard"];
 
 export default function DodgeDashPage() {
   const { progress: playerProgress, addMoney } = usePlayerProgress();
@@ -51,13 +52,20 @@ export default function DodgeDashPage() {
     setPlayerX(162);
     setBlocks([]);
     setTimeLeft(nextLevel.time);
-    deadlineRef.current = Date.now() + nextLevel.time * 1000;
+    deadlineRef.current = 0;
     endedRef.current = false;
     setGameActive(true);
     setResult(null);
     setLastReward(0);
     setStatus("Move left and right to dodge the blocks.");
   };
+  const launchLevel = (nextDifficulty: Difficulty) => {
+    levelRef.current = levels[nextDifficulty];
+    setDifficulty(nextDifficulty);
+    startGame();
+  };
+  const nextDifficulty = difficultyOrder[Math.min(difficultyOrder.indexOf(difficulty) + 1, difficultyOrder.length - 1)];
+  const previousDifficulty = difficultyOrder[Math.max(difficultyOrder.indexOf(difficulty) - 1, 0)];
 
   useEffect(() => {
     if (!gameActive) return;
@@ -80,6 +88,7 @@ export default function DodgeDashPage() {
 
   useEffect(() => {
     if (!gameActive) return;
+    if (deadlineRef.current === 0) deadlineRef.current = Date.now() + levelRef.current.time * 1000;
 
     const timer = window.setInterval(() => {
       if (endedRef.current) return;
@@ -153,7 +162,7 @@ export default function DodgeDashPage() {
 
         <div style={styles.levelRow} aria-label="Choose difficulty">
           {(Object.keys(levels) as Difficulty[]).map((option) => (
-            <button key={option} style={{ ...styles.levelButton, ...(difficulty === option ? styles.levelButtonActive : {}) }} onClick={() => { levelRef.current = levels[option]; setDifficulty(option); startGame(); }} disabled={gameActive}>
+            <button key={option} style={{ ...styles.levelButton, ...(difficulty === option ? styles.levelButtonActive : {}) }} onClick={() => launchLevel(option)} disabled={gameActive}>
               {levels[option].label}
             </button>
           ))}
@@ -180,7 +189,9 @@ export default function DodgeDashPage() {
               <p style={styles.resultText}>{result === "survived" ? "You survived the block storm." : "A falling block caught you."}</p>
               <p style={styles.resultReward}>+${lastReward}</p>
               <div style={styles.resultActions}>
-                <button style={styles.button} onClick={startGame}>Play again</button>
+                <button style={styles.button} onClick={() => launchLevel(difficulty)}>Play again</button>
+                <button style={styles.secondaryResultButton} onClick={() => launchLevel(nextDifficulty)}>Proceed to next level</button>
+                <button style={styles.secondaryResultButton} onClick={() => launchLevel(previousDifficulty)}>Go down one level</button>
                 <Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link>
               </div>
             </div>
@@ -350,5 +361,6 @@ const styles: Record<string, CSSProperties> = {
   resultText: { margin: 0, color: "#c9daed" },
   resultReward: { margin: "18px 0", color: "#8fe4a7", fontSize: 28, fontWeight: 800 },
   resultActions: { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" },
+  secondaryResultButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", background: "rgba(255,255,255,0.08)", color: "#f6fbff", fontWeight: 700, cursor: "pointer" },
   arcadeButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", color: "#f6fbff", textDecoration: "none", fontWeight: 700 },
 };
