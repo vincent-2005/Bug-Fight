@@ -14,9 +14,10 @@ function shade(hex: string, amount: number) {
 }
 
 function createBoard(target: string) {
-  const targetIndex = Math.floor(Math.random() * 16);
-  return Array.from({ length: 16 }, (_, index) => {
-    if (index === targetIndex) return target;
+  const targetIndexes = new Set<number>();
+  while (targetIndexes.size < 2) targetIndexes.add(Math.floor(Math.random() * 9));
+  return Array.from({ length: 9 }, (_, index) => {
+    if (targetIndexes.has(index)) return target;
     const amount = [-48, -31, -18, 17, 30, 45][Math.floor(Math.random() * 6)];
     return shade(target, amount);
   });
@@ -28,7 +29,7 @@ export default function ColorMatchPage() {
   const [board, setBoard] = useState<string[]>([]);
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(14);
+  const [timeLeft, setTimeLeft] = useState(16);
   const [gameActive, setGameActive] = useState(false);
   const [status, setStatus] = useState("Start the timer and smash the matching tiles.");
 
@@ -38,9 +39,9 @@ export default function ColorMatchPage() {
     setBoard(createBoard(nextTarget));
     setHits(0);
     setMisses(0);
-    setTimeLeft(14);
+    setTimeLeft(16);
     setGameActive(true);
-    setStatus("Find the one exact shade. The other tiles are close, but not a match.");
+    setStatus("Find either exact match. The other tiles are close, but not a match.");
   };
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export default function ColorMatchPage() {
     if (board[index] === targetColor) {
       const nextHits = hits + 1;
       setHits(nextHits);
-      if (nextHits >= 10) {
+      if (nextHits >= 8) {
         const reward = 25 + nextHits * 3;
         setGameActive(false);
         setStatus(`Perfect run! You earned $${reward}.`);
@@ -93,7 +94,7 @@ export default function ColorMatchPage() {
           <div>
             <p style={styles.eyebrow}>MINI-GAME</p>
             <h1 style={styles.title}>Color Match</h1>
-            <p style={styles.subtitle}>Find the one exact shade among near-identical tiles before time runs out.</p>
+            <p style={styles.subtitle}>Find either exact shade before time runs out.</p>
           </div>
           <Link href="/mini-games" style={styles.backLink}>← Back</Link>
         </div>
@@ -207,7 +208,7 @@ const styles: Record<string, CSSProperties> = {
   },
   board: {
     display: "grid",
-    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     gap: 8,
     marginBottom: 16,
   },
