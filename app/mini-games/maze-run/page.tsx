@@ -123,9 +123,33 @@ const rawMazeLayouts: MazeLayout[] = [
 function createEasyMaze(width: number, height: number, variant: number) {
   const grid = Array.from({ length: height }, (_, y) => Array.from({ length: width }, (_, x) => x === 0 || y === 0 || x === width - 1 || y === height - 1 ? "#" : "."));
   const centerX = Math.floor(width / 2), centerY = Math.floor(height / 2);
-  for (let y = centerY - 1; y <= centerY + 1; y++) for (let x = centerX - 1; x <= centerX + 1; x++) grid[y][x] = "#";
-  if (variant % 2 === 0) grid[centerY][centerX - 1] = ".";
-  else grid[centerY - 1][centerX] = ".";
+  const block = (x: number, y: number) => { if (x > 1 && x < width - 2 && y > 1 && y < height - 2) grid[y][x] = "#"; };
+  switch (variant % 6) {
+    case 0:
+      for (let y = centerY - 1; y <= centerY + 1; y++) for (let x = centerX - 1; x <= centerX + 1; x++) block(x, y);
+      grid[centerY][centerX - 1] = ".";
+      break;
+    case 1:
+      for (let y = 2; y < height - 2; y++) if (y !== 3 && y !== height - 4) block(centerX, y);
+      break;
+    case 2:
+      for (let x = 2; x < width - 2; x++) if (x !== 3 && x !== width - 4) block(x, centerY);
+      break;
+    case 3:
+      for (let y = centerY - 2; y <= centerY; y++) for (let x = centerX - 4; x <= centerX - 2; x++) block(x, y);
+      for (let y = centerY; y <= centerY + 2; y++) for (let x = centerX + 2; x <= centerX + 4; x++) block(x, y);
+      break;
+    case 4:
+      for (let y = 2; y <= centerY; y++) block(centerX - 2, y);
+      for (let x = centerX - 2; x <= width - 3; x++) block(x, centerY);
+      grid[centerY][centerX + 2] = ".";
+      break;
+    default:
+      for (let y = centerY - 2; y <= centerY + 2; y++) block(centerX - 3, y);
+      for (let y = centerY - 2; y <= centerY + 2; y++) block(centerX + 3, y);
+      for (let x = centerX - 2; x <= centerX + 2; x++) block(x, centerY - 2);
+      break;
+  }
   return grid.map((row) => row.join(""));
 }
 
