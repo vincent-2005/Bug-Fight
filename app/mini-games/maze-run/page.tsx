@@ -38,7 +38,7 @@ function nextChaserStep(grid: string[], from: Position, target: Position): Posit
   return step;
 }
 
-const mazeLayouts: MazeLayout[] = [
+const rawMazeLayouts: MazeLayout[] = [
   {
     grid: ["########", "#......#", "#.##..##", "#....#.#", "#.#....#", "#......#", "########"],
     start: { x: 1, y: 1 },
@@ -50,7 +50,7 @@ const mazeLayouts: MazeLayout[] = [
     goal: { x: 6, y: 5 },
   },
   {
-    grid: ["############", "#..........#", "##########.#", "#..........#", "#.##########", "#..........#", "##########.#", "#..........#", "#.##########", "#..........#", "############"],
+    grid: ["############", "#..........#", "#..######..#", "#..#....#..#", "#..#....#..#", "#..#....#..#", "#..######..#", "#..........#", "#..........#", "#..........#", "############"],
     start: { x: 1, y: 1 },
     goal: { x: 10, y: 9 },
   },
@@ -115,6 +115,20 @@ const mazeLayouts: MazeLayout[] = [
     goal: { x: 26, y: 19 },
   },
 ];
+
+function createEasyMaze(width: number, height: number, variant: number) {
+  const grid = Array.from({ length: height }, (_, y) => Array.from({ length: width }, (_, x) => x === 0 || y === 0 || x === width - 1 || y === height - 1 ? "#" : "."));
+  const centerX = Math.floor(width / 2), centerY = Math.floor(height / 2);
+  for (let y = centerY - 1; y <= centerY + 1; y++) for (let x = centerX - 1; x <= centerX + 1; x++) grid[y][x] = "#";
+  if (variant % 2 === 0) grid[centerY][centerX - 1] = ".";
+  else grid[centerY - 1][centerX] = ".";
+  return grid.map((row) => row.join(""));
+}
+
+const mazeLayouts: MazeLayout[] = rawMazeLayouts.map((layout, index) => ({
+  ...layout,
+  grid: createEasyMaze(layout.grid[0].length, layout.grid.length, index),
+}));
 const mapThemes = ["#38bdf8", "#a78bfa", "#fb7185", "#facc15", "#34d399", "#f97316"];
 
 export default function MazeRunPage() {
