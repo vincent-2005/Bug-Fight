@@ -143,7 +143,8 @@ export default function MazeRunPage() {
     setCopPosition(mazeLayouts[nextIndex].goal);
     setFinished(false);
     setCaught(false);
-    setStatus(`Maze ${nextIndex + 1} is ready. Press Start run when you are ready.`);
+    setGameActive(true);
+    setStatus(`Maze ${nextIndex + 1} of ${mazeLayouts.length}: escape the cop.`);
   };
 
   useEffect(() => {
@@ -201,7 +202,7 @@ export default function MazeRunPage() {
         <div style={styles.statsRow}>
           <div style={styles.statBox}><strong>{playerProgress.money}</strong><span>Wallet</span></div>
           <div style={styles.statBox}><strong>{gameActive ? "Live" : "Ready"}</strong><span>Status</span></div>
-          <div style={styles.statBox}><strong>{mazeIndex + 1}</strong><span>Layout</span></div>
+          <div style={styles.statBox}><strong>{mazeIndex + 1} / {mazeLayouts.length}</strong><span>Map</span></div>
         </div>
 
         <div style={{ ...styles.grid, gridTemplateColumns: `repeat(${maze.grid[0].length}, 1fr)` }}>
