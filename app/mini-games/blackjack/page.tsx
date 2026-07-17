@@ -129,7 +129,7 @@ export default function BlackjackPage() {
     if (phase !== "playing") return;
 
     let dealerCards = [...dealerHand];
-    let remainingDeck = [...deck];
+    const remainingDeck = [...deck];
 
     while (getHandScore(dealerCards) < 17) {
       const nextCard = remainingDeck.shift();
@@ -143,6 +143,7 @@ export default function BlackjackPage() {
 
   const playerScore = getHandScore(playerHand);
   const dealerScore = getHandScore(dealerHand);
+  const visibleDealerScore = getHandScore(dealerHand.slice(0, 1));
 
   return (
     <main style={styles.page}>
@@ -159,7 +160,7 @@ export default function BlackjackPage() {
         <div style={styles.statsRow}>
           <div style={styles.statBox}><strong>{playerProgress.money}</strong><span>Wallet</span></div>
           <div style={styles.statBox}><strong>{phase === "playing" ? playerScore : "—"}</strong><span>Your hand</span></div>
-          <div style={styles.statBox}><strong>{phase === "playing" ? dealerScore : "—"}</strong><span>Dealer</span></div>
+          <div style={styles.statBox}><strong>{phase === "playing" ? visibleDealerScore : phase === "finished" ? dealerScore : "—"}</strong><span>Dealer</span></div>
         </div>
 
         <div style={styles.bettingRow}>
@@ -188,7 +189,11 @@ export default function BlackjackPage() {
           <div style={styles.handBlock}>
             <h2 style={styles.handTitle}>Dealer</h2>
             <div style={styles.handRow}>
-              {dealerHand.length === 0 ? <span style={styles.placeholder}>No cards yet</span> : dealerHand.map((card, index) => <div key={`${card.label}-${index}`} style={styles.cardChip}>{card.label}</div>)}
+              {dealerHand.length === 0 ? <span style={styles.placeholder}>No cards yet</span> : dealerHand.map((card, index) => (
+                phase === "playing" && index === 1
+                  ? <div key={`${card.label}-${index}`} style={styles.cardBack} aria-label="Dealer card face down">?</div>
+                  : <div key={`${card.label}-${index}`} style={styles.cardChip}>{card.label}</div>
+              ))}
             </div>
           </div>
         </div>
@@ -315,6 +320,17 @@ const styles: Record<string, CSSProperties> = {
     background: "linear-gradient(135deg, #5ee7ff, #60a5fa)",
     color: "#07111b",
     fontWeight: 700,
+  },
+  cardBack: {
+    display: "grid",
+    placeItems: "center",
+    minWidth: 44,
+    padding: "8px 10px",
+    borderRadius: 10,
+    background: "repeating-linear-gradient(45deg, #17345f 0 5px, #24548e 5px 10px)",
+    border: "2px solid #8edbff",
+    color: "#dff7ff",
+    fontWeight: 800,
   },
   status: {
     margin: "16px 0",

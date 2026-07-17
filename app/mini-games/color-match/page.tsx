@@ -5,16 +5,21 @@ import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { usePlayerProgress } from "@/components/bug-brawler/progress";
 
-const palette = ["#f43f5e", "#22c55e", "#3b82f6", "#f59e0b", "#a855f7", "#fb923c"];
+const palette = ["#ef476f", "#f78c6b", "#ffd166", "#a7c957", "#48cae4", "#5e60ce", "#b565d9", "#e76f9a"];
+
+function shade(hex: string, amount: number) {
+  const value = Number.parseInt(hex.slice(1), 16);
+  const channel = (shift: number) => Math.max(0, Math.min(255, ((value >> shift) & 255) + amount));
+  return `rgb(${channel(16)}, ${channel(8)}, ${channel(0)})`;
+}
 
 function createBoard(target: string) {
-  const board = Array.from({ length: 9 }, (_, index) => {
-    if (index < 3) return target;
-    const random = palette[Math.floor(Math.random() * palette.length)];
-    return random === target ? palette[(palette.indexOf(target) + 1) % palette.length] : random;
+  const targetIndex = Math.floor(Math.random() * 16);
+  return Array.from({ length: 16 }, (_, index) => {
+    if (index === targetIndex) return target;
+    const amount = [-34, -22, -13, 12, 21, 32][Math.floor(Math.random() * 6)];
+    return shade(target, amount);
   });
-
-  return board.map((color, index) => (index === 4 ? target : color));
 }
 
 export default function ColorMatchPage() {
@@ -23,7 +28,7 @@ export default function ColorMatchPage() {
   const [board, setBoard] = useState<string[]>([]);
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(15);
+  const [timeLeft, setTimeLeft] = useState(12);
   const [gameActive, setGameActive] = useState(false);
   const [status, setStatus] = useState("Start the timer and smash the matching tiles.");
 
@@ -33,9 +38,9 @@ export default function ColorMatchPage() {
     setBoard(createBoard(nextTarget));
     setHits(0);
     setMisses(0);
-    setTimeLeft(15);
+    setTimeLeft(12);
     setGameActive(true);
-    setStatus("Find every tile that matches the target color.");
+    setStatus("Find the one exact shade. The other tiles are close, but not a match.");
   };
 
   useEffect(() => {
@@ -64,14 +69,14 @@ export default function ColorMatchPage() {
     if (board[index] === targetColor) {
       const nextHits = hits + 1;
       setHits(nextHits);
-      if (nextHits >= 8) {
+      if (nextHits >= 10) {
         const reward = 25 + nextHits * 3;
         setGameActive(false);
         setStatus(`Perfect run! You earned $${reward}.`);
         addMoney(reward);
         return;
       }
-      const nextTarget = palette[Math.floor(Math.random() * palette.length)];
+      const nextTarget = palette[(palette.indexOf(targetColor) + nextHits) % palette.length];
       setTargetColor(nextTarget);
       setBoard(createBoard(nextTarget));
       setStatus("Nice hit! Another color is up.");
@@ -88,7 +93,7 @@ export default function ColorMatchPage() {
           <div>
             <p style={styles.eyebrow}>MINI-GAME</p>
             <h1 style={styles.title}>Color Match</h1>
-            <p style={styles.subtitle}>Tap the matching tiles as fast as you can and beat the timer.</p>
+            <p style={styles.subtitle}>Find the one exact shade among near-identical tiles before time runs out.</p>
           </div>
           <Link href="/mini-games" style={styles.backLink}>← Back</Link>
         </div>
@@ -202,14 +207,14 @@ const styles: Record<string, CSSProperties> = {
   },
   board: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 12,
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    gap: 8,
     marginBottom: 16,
   },
   tile: {
     border: "none",
     aspectRatio: "1 / 1",
-    borderRadius: 16,
+    borderRadius: 10,
     cursor: "pointer",
     boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.18)",
   },

@@ -17,11 +17,6 @@ const games = [
     text: "Answer quick questions and cash in for a solid streak.",
   },
   {
-    href: "/mini-games/bubble-burst",
-    title: "Bubble Burst",
-    text: "Pop every bubble before the clock runs out.",
-  },
-  {
     href: "/mini-games/maze-run",
     title: "Maze Run",
     text: "Guide the character through the maze and reach the exit.",
