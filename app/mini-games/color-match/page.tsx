@@ -8,7 +8,7 @@ import { usePlayerProgress } from "@/components/bug-brawler/progress";
 const palette = ["#ef476f", "#f78c6b", "#ffd166", "#a7c957", "#48cae4", "#5e60ce", "#b565d9", "#e76f9a"];
 type Difficulty = "easy" | "medium" | "hard";
 const levels: Record<Difficulty, { label: string; tiles: number; matches: number; time: number; goal: number; shades: number[] }> = {
-  easy: { label: "Easy", tiles: 9, matches: 2, time: 16, goal: 8, shades: [-48, -31, -18, 17, 30, 45] },
+  easy: { label: "Easy", tiles: 9, matches: 3, time: 20, goal: 6, shades: [-68, -48, -30, 29, 47, 66] },
   medium: { label: "Medium", tiles: 16, matches: 1, time: 14, goal: 10, shades: [-33, -22, -13, 12, 21, 32] },
   hard: { label: "Hard", tiles: 16, matches: 1, time: 11, goal: 12, shades: [-18, -11, -6, 6, 11, 18] },
 };
@@ -127,7 +127,13 @@ export default function ColorMatchPage() {
               {levels[option].label}
             </button>
           ))}
-          <span style={styles.levelHint}>{level.tiles === 9 ? "3 × 3 · 2 matches" : `4 × 4 · ${level.matches} match`}</span>
+          <span style={styles.levelHint}>{level.tiles === 9 ? `3 × 3 · ${level.matches} matches` : `4 × 4 · ${level.matches} match`}</span>
+        </div>
+
+        <div style={styles.progressRow}>
+          <span>Round progress</span>
+          <strong>{Math.min(hits, level.goal)} / {level.goal}</strong>
+          <div style={styles.progressTrack}><i style={{ ...styles.progressFill, width: `${Math.min(100, hits / level.goal * 100)}%` }} /></div>
         </div>
 
         <div style={styles.targetCard}>
@@ -267,6 +273,28 @@ const styles: Record<string, CSSProperties> = {
   levelHint: {
     color: "#9eb4c9",
     fontSize: 12,
+  },
+  progressRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto",
+    gap: "6px 12px",
+    marginBottom: 16,
+    color: "#cfdce8",
+    fontSize: 12,
+  },
+  progressTrack: {
+    gridColumn: "1 / -1",
+    height: 7,
+    overflow: "hidden",
+    borderRadius: 999,
+    background: "rgba(255,255,255,0.12)",
+  },
+  progressFill: {
+    display: "block",
+    height: "100%",
+    borderRadius: 999,
+    background: "linear-gradient(90deg, #f5b1ff, #73e0ff)",
+    transition: "width 180ms ease",
   },
   board: {
     display: "grid",
