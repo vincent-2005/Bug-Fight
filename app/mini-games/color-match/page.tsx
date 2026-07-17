@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { usePlayerProgress } from "@/components/bug-brawler/progress";
 
@@ -42,18 +42,25 @@ export default function ColorMatchPage() {
   const [lastReward, setLastReward] = useState(0);
   const [status, setStatus] = useState("Start the timer and smash the matching tiles.");
   const level = levels[difficulty];
+  const difficultyRef = useRef<Difficulty>("easy");
+  const levelRef = useRef(levels.easy);
+
+  useEffect(() => { difficultyRef.current = difficulty; levelRef.current = level; }, [difficulty, level]);
 
   const startGame = () => {
+    const nextDifficulty = difficultyRef.current;
+    const nextLevel = levelRef.current;
     const nextTarget = palette[Math.floor(Math.random() * palette.length)];
+    setDifficulty(nextDifficulty);
     setTargetColor(nextTarget);
-    setBoard(createBoard(nextTarget, level));
+    setBoard(createBoard(nextTarget, nextLevel));
     setHits(0);
     setMisses(0);
-    setTimeLeft(level.time);
+    setTimeLeft(nextLevel.time);
     setGameActive(true);
     setResult(null);
     setLastReward(0);
-    setStatus(`Find ${level.matches === 1 ? "the one exact match" : "either exact match"} before time runs out.`);
+    setStatus(`Find ${nextLevel.matches === 1 ? "the one exact match" : "either exact match"} before time runs out.`);
   };
 
   useEffect(() => {
@@ -123,7 +130,7 @@ export default function ColorMatchPage() {
 
         <div style={styles.levelRow} aria-label="Choose difficulty">
           {(Object.keys(levels) as Difficulty[]).map((option) => (
-            <button key={option} style={{ ...styles.levelButton, ...(difficulty === option ? styles.levelButtonActive : {}) }} onClick={() => !gameActive && setDifficulty(option)} disabled={gameActive}>
+            <button key={option} style={{ ...styles.levelButton, ...(difficulty === option ? styles.levelButtonActive : {}) }} onClick={() => { difficultyRef.current = option; levelRef.current = levels[option]; startGame(); }} disabled={gameActive}>
               {levels[option].label}
             </button>
           ))}

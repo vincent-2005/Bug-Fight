@@ -47,10 +47,11 @@ export default function DodgeDashPage() {
   useEffect(() => { addMoneyRef.current = addMoney; }, [addMoney]);
 
   const startGame = () => {
+    const nextLevel = levelRef.current;
     setPlayerX(162);
     setBlocks([]);
-    setTimeLeft(level.time);
-    deadlineRef.current = Date.now() + level.time * 1000;
+    setTimeLeft(nextLevel.time);
+    deadlineRef.current = Date.now() + nextLevel.time * 1000;
     endedRef.current = false;
     setGameActive(true);
     setResult(null);
@@ -152,7 +153,7 @@ export default function DodgeDashPage() {
 
         <div style={styles.levelRow} aria-label="Choose difficulty">
           {(Object.keys(levels) as Difficulty[]).map((option) => (
-            <button key={option} style={{ ...styles.levelButton, ...(difficulty === option ? styles.levelButtonActive : {}) }} onClick={() => !gameActive && setDifficulty(option)} disabled={gameActive}>
+            <button key={option} style={{ ...styles.levelButton, ...(difficulty === option ? styles.levelButtonActive : {}) }} onClick={() => { levelRef.current = levels[option]; setDifficulty(option); startGame(); }} disabled={gameActive}>
               {levels[option].label}
             </button>
           ))}
