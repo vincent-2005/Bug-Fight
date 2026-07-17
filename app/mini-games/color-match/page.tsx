@@ -50,7 +50,7 @@ export default function ColorMatchPage() {
   const startGame = () => {
     const nextDifficulty = difficultyRef.current;
     const nextLevel = levelRef.current;
-    const nextTarget = palette[Math.floor(Math.random() * palette.length)];
+    const nextTarget = palette[(palette.indexOf(targetColor) + 1) % palette.length];
     setDifficulty(nextDifficulty);
     setTargetColor(nextTarget);
     setBoard(createBoard(nextTarget, nextLevel));
