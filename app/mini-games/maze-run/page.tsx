@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { usePlayerProgress } from "@/components/bug-brawler/progress";
 
@@ -36,6 +36,10 @@ function nextChaserStep(grid: string[], from: Position, target: Position): Posit
   let parent = previous.get(`${step.x},${step.y}`);
   while (parent && `${parent.x},${parent.y}` !== startKey) { step = parent; parent = previous.get(`${step.x},${step.y}`); }
   return step;
+}
+
+function copStart(maze: MazeLayout): Position {
+  return { x: 1, y: maze.grid.length - 2 };
 }
 
 const rawMazeLayouts: MazeLayout[] = [
@@ -137,31 +141,28 @@ export default function MazeRunPage() {
   const maze = mazeLayouts[mazeIndex % mazeLayouts.length];
   const mapTheme = mapThemes[mazeIndex % mapThemes.length];
   const [playerPosition, setPlayerPosition] = useState<Position>(maze.start);
-  const [copPosition, setCopPosition] = useState<Position>(maze.goal);
+  const [copPosition, setCopPosition] = useState<Position>(copStart(maze));
   const [gameActive, setGameActive] = useState(false);
   const [finished, setFinished] = useState(false);
   const [caught, setCaught] = useState(false);
   const [status, setStatus] = useState("Start the run and reach the green exit.");
-  const playerMoveCount = useRef(0);
   const reward = 28 + Math.min(mazeIndex, mazeLayouts.length - 1) * 6;
 
   const startGame = () => {
     setPlayerPosition(maze.start);
-    setCopPosition(maze.goal);
+    setCopPosition(copStart(maze));
     setGameActive(true);
     setFinished(false);
     setCaught(false);
-    playerMoveCount.current = 0;
-    setStatus("Reach the exit before the cop catches you. The cop moves every second turn.");
+    setStatus("Reach the exit before the cop catches you. The cop moves at your speed.");
   };
   const nextLevel = () => {
     const nextIndex = (mazeIndex + 1) % mazeLayouts.length;
     setMazeIndex(nextIndex);
     setPlayerPosition(mazeLayouts[nextIndex].start);
-    setCopPosition(mazeLayouts[nextIndex].goal);
+    setCopPosition(copStart(mazeLayouts[nextIndex]));
     setFinished(false);
     setCaught(false);
-    playerMoveCount.current = 0;
     setGameActive(true);
     setStatus(`Maze ${nextIndex + 1} of ${mazeLayouts.length}: escape the cop.`);
   };
@@ -192,10 +193,9 @@ export default function MazeRunPage() {
         setFinished(true);
         return;
       }
-      playerMoveCount.current += 1;
-      const nextCop = playerMoveCount.current % 2 === 0 ? nextChaserStep(maze.grid, copPosition, next) : copPosition;
-      if (playerMoveCount.current % 2 === 0) setCopPosition(nextCop);
-      if (nextCop.x === next.x && nextCop.y === next.y && playerMoveCount.current % 2 === 0) {
+      const nextCop = nextChaserStep(maze.grid, copPosition, next);
+      setCopPosition(nextCop);
+      if (nextCop.x === next.x && nextCop.y === next.y) {
         setGameActive(false);
         setCaught(true);
         setStatus("The cop caught you. Try again.");
