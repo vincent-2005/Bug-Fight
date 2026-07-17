@@ -39,7 +39,7 @@ function nextChaserStep(grid: string[], from: Position, target: Position): Posit
 }
 
 function copStart(maze: MazeLayout): Position {
-  return { x: 1, y: maze.grid.length - 2 };
+  return { x: maze.start.x, y: Math.min(maze.grid.length - 2, maze.start.y + 2) };
 }
 
 const rawMazeLayouts: MazeLayout[] = [
