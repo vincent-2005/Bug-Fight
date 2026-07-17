@@ -15,15 +15,23 @@ const PLAYFIELD_WIDTH = 360;
 const PLAYFIELD_HEIGHT = 320;
 const PLAYER_WIDTH = 36;
 const BLOCK_SIZE = 28;
+type Difficulty = "easy" | "medium" | "hard";
+const levels: Record<Difficulty, { label: string; time: number; speed: number; spawnChance: number; reward: number }> = {
+  easy: { label: "Easy", time: 12, speed: 8, spawnChance: .18, reward: 35 },
+  medium: { label: "Medium", time: 15, speed: 11, spawnChance: .28, reward: 50 },
+  hard: { label: "Hard", time: 18, speed: 15, spawnChance: .38, reward: 75 },
+};
 
 export default function DodgeDashPage() {
   const { progress: playerProgress, addMoney } = usePlayerProgress();
   const [playerX, setPlayerX] = useState(162);
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [timeLeft, setTimeLeft] = useState(15);
+  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
+  const [timeLeft, setTimeLeft] = useState(levels.easy.time);
   const [gameActive, setGameActive] = useState(false);
   const [status, setStatus] = useState("Start the run and survive the falling danger.");
   const playerXRef = useRef(playerX);
+  const level = levels[difficulty];
 
   useEffect(() => {
     playerXRef.current = playerX;
@@ -32,7 +40,7 @@ export default function DodgeDashPage() {
   const startGame = () => {
     setPlayerX(162);
     setBlocks([]);
-    setTimeLeft(15);
+    setTimeLeft(level.time);
     setGameActive(true);
     setStatus("Move left and right to dodge the blocks.");
   };
@@ -64,8 +72,8 @@ export default function DodgeDashPage() {
         if (current <= 1) {
           window.clearInterval(timer);
           setGameActive(false);
-          setStatus("You survived the storm and earned cash.");
-          addMoney(45);
+          setStatus(`You survived ${level.label} and earned $${level.reward}.`);
+          addMoney(level.reward);
           return 0;
         }
         return current - 1;
@@ -73,15 +81,15 @@ export default function DodgeDashPage() {
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [addMoney, gameActive]);
+  }, [addMoney, gameActive, level.label, level.reward]);
 
   useEffect(() => {
     if (!gameActive) return;
 
     const gameLoop = window.setInterval(() => {
       setBlocks((currentBlocks) => {
-        const nextBlocks = currentBlocks.map((block) => ({ ...block, y: block.y + 14 }));
-        if (Math.random() > 0.62) {
+        const nextBlocks = currentBlocks.map((block) => ({ ...block, y: block.y + level.speed }));
+        if (Math.random() < level.spawnChance) {
           nextBlocks.push({ id: Date.now() + Math.random(), x: 24 + Math.floor(Math.random() * (PLAYFIELD_WIDTH - 48)), y: -24 });
         }
 
@@ -104,7 +112,7 @@ export default function DodgeDashPage() {
     }, 90);
 
     return () => window.clearInterval(gameLoop);
-  }, [gameActive]);
+  }, [gameActive, level]);
 
   return (
     <main style={styles.page}>
@@ -122,6 +130,15 @@ export default function DodgeDashPage() {
           <div style={styles.statBox}><strong>{timeLeft}s</strong><span>Time</span></div>
           <div style={styles.statBox}><strong>${playerProgress.money}</strong><span>Wallet</span></div>
           <div style={styles.statBox}><strong>{gameActive ? "Live" : "Ready"}</strong><span>Status</span></div>
+        </div>
+
+        <div style={styles.levelRow} aria-label="Choose difficulty">
+          {(Object.keys(levels) as Difficulty[]).map((option) => (
+            <button key={option} style={{ ...styles.levelButton, ...(difficulty === option ? styles.levelButtonActive : {}) }} onClick={() => !gameActive && setDifficulty(option)} disabled={gameActive}>
+              {levels[option].label}
+            </button>
+          ))}
+          <span style={styles.levelHint}>{level.time}s · ${level.reward} reward</span>
         </div>
 
         <div style={styles.playfield}>
@@ -212,6 +229,31 @@ const styles: Record<string, CSSProperties> = {
     border: "1px solid rgba(255,255,255,0.16)",
     background: "linear-gradient(180deg, #133959 0%, #09131d 100%)",
     overflow: "hidden",
+  },
+  levelRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+    marginBottom: 16,
+  },
+  levelButton: {
+    border: "1px solid rgba(255,255,255,0.18)",
+    borderRadius: 999,
+    padding: "8px 12px",
+    background: "rgba(255,255,255,0.05)",
+    color: "#dce8f3",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  levelButtonActive: {
+    borderColor: "#f2bdff",
+    background: "rgba(242,189,255,0.18)",
+    color: "#fff6ff",
+  },
+  levelHint: {
+    color: "#9eb4c9",
+    fontSize: 12,
   },
   player: {
     position: "absolute",
