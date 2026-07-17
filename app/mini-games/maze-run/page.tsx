@@ -150,6 +150,14 @@ function createEasyMaze(width: number, height: number, variant: number) {
       for (let x = centerX - 2; x <= centerX + 2; x++) block(x, centerY - 2);
       break;
   }
+  // Every map gets two additional detours; their placement alternates by level.
+  if (variant % 2 === 0) {
+    block(3, height - 3); block(4, height - 3);
+    block(width - 4, 3); block(width - 4, 4);
+  } else {
+    block(3, 3); block(3, 4);
+    block(width - 4, height - 4); block(width - 5, height - 4);
+  }
   if (width >= 20) {
     for (let y = 3; y <= 4; y++) for (let x = 3; x <= 4; x++) block(x, y);
     for (let y = height - 5; y <= height - 4; y++) for (let x = width - 5; x <= width - 4; x++) block(x, y);
