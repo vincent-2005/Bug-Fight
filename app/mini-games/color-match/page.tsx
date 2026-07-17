@@ -52,7 +52,7 @@ export default function ColorMatchPage() {
         if (current <= 1) {
           window.clearInterval(timer);
           setGameActive(false);
-          const reward = 18 + hits * 4;
+          const reward = 35 + hits * 8;
           setStatus(`Time is up! You scored ${hits} hits. Reward: $${reward}.`);
           addMoney(reward);
           return 0;
@@ -71,7 +71,7 @@ export default function ColorMatchPage() {
       const nextHits = hits + 1;
       setHits(nextHits);
       if (nextHits >= 8) {
-        const reward = 25 + nextHits * 3;
+        const reward = 60 + nextHits * 10;
         setGameActive(false);
         setStatus(`Perfect run! You earned $${reward}.`);
         addMoney(reward);
