@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import { usePlayerProgress } from "@/components/bug-brawler/progress";
 
 type Card = {
   suit: string;
@@ -52,23 +51,23 @@ function getHandScore(hand: Card[]) {
 }
 
 export default function BlackjackPage() {
-  const { progress: playerProgress, setProgress, addMoney } = usePlayerProgress();
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [dealerHand, setDealerHand] = useState<Card[]>([]);
   const [deck, setDeck] = useState<Card[]>([]);
-  const [bet, setBet] = useState(10);
-  const [roundBet, setRoundBet] = useState(10);
+  const [chips, setChips] = useState(5);
+  const [bet, setBet] = useState(1);
+  const [roundBet, setRoundBet] = useState(1);
   const [status, setStatus] = useState("The dealer waits for your first hand.");
   const [phase, setPhase] = useState<Outcome>("ready");
 
   const startRound = () => {
-    const safeBet = Math.max(1, Math.min(playerProgress.money, Math.floor(bet || 0)));
-    if (safeBet > playerProgress.money) {
-      setStatus("You do not have enough money for that bet.");
+    const safeBet = Math.max(1, Math.floor(bet || 0));
+    if (safeBet > chips) {
+      setStatus("You do not have enough chips for that bet.");
       return;
     }
 
-    setProgress((current) => ({ ...current, money: current.money - safeBet }));
+    setChips((current) => current - safeBet);
     setRoundBet(safeBet);
 
     const freshDeck = createDeck();
@@ -95,10 +94,10 @@ export default function BlackjackPage() {
     }
 
     if (outcome === "win") {
-      addMoney(roundBet * 2);
-      setStatus(`You win! The dealer paid out $${roundBet * 2}.`);
+      setChips((current) => current + roundBet * 2);
+      setStatus(`You win! Your ${roundBet} chip stake doubles to ${roundBet * 2} chips.`);
     } else if (outcome === "push") {
-      addMoney(roundBet);
+      setChips((current) => current + roundBet);
       setStatus("Push. The hand is a tie and your stake is returned.");
     } else {
       setStatus("Bust. The dealer takes the hand.");
@@ -159,7 +158,7 @@ export default function BlackjackPage() {
         </div>
 
         <div style={styles.statsRow}>
-          <div style={styles.statBox}><strong>{playerProgress.money}</strong><span>Wallet</span></div>
+          <div style={styles.statBox}><strong>{chips}</strong><span>One-dollar chips</span></div>
           <div style={styles.statBox}><strong>{phase === "playing" ? playerScore : "—"}</strong><span>Your hand</span></div>
           <div style={styles.statBox}><strong>{phase === "playing" ? visibleDealerScore : phase === "finished" ? dealerScore : "—"}</strong><span>Dealer</span></div>
         </div>
@@ -170,9 +169,10 @@ export default function BlackjackPage() {
             <input
               type="number"
               min="1"
-              max={playerProgress.money}
+              max={chips}
               value={bet}
               onChange={(event) => setBet(Number(event.target.value) || 1)}
+              disabled={phase === "playing"}
               style={styles.betInput}
             />
           </label>
@@ -180,14 +180,16 @@ export default function BlackjackPage() {
         </div>
 
         <div style={styles.table}>
-          <div style={styles.handBlock}>
+          <div style={{ ...styles.handBlock, ...styles.playerSeat }}>
+            <p style={styles.seatLabel}>YOU · SOUTH SEAT</p>
             <h2 style={styles.handTitle}>Player</h2>
             <div style={styles.handRow}>
               {playerHand.length === 0 ? <span style={styles.placeholder}>No cards yet</span> : playerHand.map((card, index) => <div key={`${card.label}-${index}`} style={styles.cardChip} className="casino-card">{card.label}</div>)}
             </div>
           </div>
 
-          <div style={styles.handBlock}>
+          <div style={{ ...styles.handBlock, ...styles.dealerSeat }}>
+            <p style={styles.seatLabel}>DEALER · NORTH SEAT</p>
             <h2 style={styles.handTitle}>Dealer</h2>
             <div style={styles.handRow}>
               {dealerHand.length === 0 ? <span style={styles.placeholder}>No cards yet</span> : dealerHand.map((card, index) => (
@@ -296,7 +298,13 @@ const styles: Record<string, CSSProperties> = {
   },
   table: {
     display: "grid",
-    gap: 12,
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 16,
+    padding: 18,
+    borderRadius: 28,
+    background: "radial-gradient(ellipse at center, #176340, #0c3628 68%, #061711)",
+    border: "2px solid #cfae5b",
+    boxShadow: "inset 0 0 0 9px #0b241b, inset 0 0 35px #0008",
   },
   handBlock: {
     padding: 16,
@@ -306,6 +314,21 @@ const styles: Record<string, CSSProperties> = {
   handTitle: {
     margin: "0 0 10px",
     color: "#fff6d3",
+  },
+  dealerSeat: {
+    border: "1px solid rgba(255, 231, 137, 0.45)",
+    background: "rgba(7, 25, 18, 0.42)",
+  },
+  playerSeat: {
+    border: "1px solid rgba(136, 241, 180, 0.48)",
+    background: "rgba(7, 25, 18, 0.42)",
+  },
+  seatLabel: {
+    margin: "0 0 7px",
+    color: "#e9d489",
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: "0.13em",
   },
   handRow: {
     display: "flex",
