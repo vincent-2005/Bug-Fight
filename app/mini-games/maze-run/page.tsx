@@ -42,6 +42,15 @@ function copStart(maze: MazeLayout): Position {
   return { x: maze.start.x, y: Math.min(maze.grid.length - 2, maze.start.y + 2) };
 }
 
+function randomFinish(maze: MazeLayout): Position {
+  const minimumDistance = Math.floor((maze.grid[0].length + maze.grid.length) / 2);
+  const options: Position[] = [];
+  maze.grid.forEach((row, y) => row.split("").forEach((cell, x) => {
+    if (cell === "." && Math.abs(x - maze.start.x) + Math.abs(y - maze.start.y) >= minimumDistance) options.push({ x, y });
+  }));
+  return options[Math.floor(Math.random() * options.length)] ?? maze.goal;
+}
+
 const rawMazeLayouts: MazeLayout[] = [
   {
     grid: ["########", "#......#", "#.##..##", "#....#.#", "#.#....#", "#......#", "########"],
@@ -186,6 +195,7 @@ export default function MazeRunPage() {
   const mapTheme = mapThemes[mazeIndex % mapThemes.length];
   const [playerPosition, setPlayerPosition] = useState<Position>(maze.start);
   const [copPosition, setCopPosition] = useState<Position>(copStart(maze));
+  const [finishPosition, setFinishPosition] = useState<Position>(maze.goal);
   const [gameActive, setGameActive] = useState(false);
   const [finished, setFinished] = useState(false);
   const [caught, setCaught] = useState(false);
@@ -195,6 +205,7 @@ export default function MazeRunPage() {
   const startGame = () => {
     setPlayerPosition(maze.start);
     setCopPosition(copStart(maze));
+    setFinishPosition(randomFinish(maze));
     setGameActive(true);
     setFinished(false);
     setCaught(false);
@@ -205,6 +216,7 @@ export default function MazeRunPage() {
     setMazeIndex(nextIndex);
     setPlayerPosition(mazeLayouts[nextIndex].start);
     setCopPosition(copStart(mazeLayouts[nextIndex]));
+    setFinishPosition(randomFinish(mazeLayouts[nextIndex]));
     setFinished(false);
     setCaught(false);
     setGameActive(true);
@@ -230,7 +242,7 @@ export default function MazeRunPage() {
 
       const next = nextPosition;
       setPlayerPosition(next);
-      if (next.x === maze.goal.x && next.y === maze.goal.y) {
+      if (next.x === finishPosition.x && next.y === finishPosition.y) {
         setGameActive(false);
         addMoney(reward);
         setStatus(`You reached the exit and earned $${reward}.`);
@@ -249,7 +261,7 @@ export default function MazeRunPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [addMoney, copPosition, gameActive, maze.goal, maze.grid, playerPosition, reward]);
+  }, [addMoney, copPosition, finishPosition, gameActive, maze.grid, playerPosition, reward]);
 
   return (
     <main style={styles.page}>
@@ -278,7 +290,7 @@ export default function MazeRunPage() {
             row.split("").map((cell, cellIndex) => {
               const isPlayer = playerPosition.x === cellIndex && playerPosition.y === rowIndex;
               const isCop = copPosition.x === cellIndex && copPosition.y === rowIndex;
-              const isGoal = maze.goal.x === cellIndex && maze.goal.y === rowIndex;
+              const isGoal = finishPosition.x === cellIndex && finishPosition.y === rowIndex;
               return (
                 <div key={`${rowIndex}-${cellIndex}`} style={{ ...styles.tile, ...(cell === "#" ? styles.wallTile : styles.pathTile), ...(isGoal ? styles.goalTile : {}), ...(isCop ? styles.copTile : {}), ...(isPlayer ? styles.playerTile : {}) }}>
                   {isPlayer ? "P" : isCop ? "🚓" : isGoal ? "E" : ""}
