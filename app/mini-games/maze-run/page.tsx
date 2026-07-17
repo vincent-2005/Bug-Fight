@@ -16,6 +16,28 @@ type MazeLayout = {
   goal: Position;
 };
 
+function nextChaserStep(grid: string[], from: Position, target: Position): Position {
+  const startKey = `${from.x},${from.y}`;
+  const targetKey = `${target.x},${target.y}`;
+  const queue = [from];
+  const previous = new Map<string, Position | null>([[startKey, null]]);
+  const directions = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 }];
+  for (let index = 0; index < queue.length; index++) {
+    const current = queue[index];
+    if (`${current.x},${current.y}` === targetKey) break;
+    directions.forEach((direction) => {
+      const next = { x: current.x + direction.x, y: current.y + direction.y };
+      const key = `${next.x},${next.y}`;
+      if (grid[next.y]?.[next.x] !== "#" && !previous.has(key)) { previous.set(key, current); queue.push(next); }
+    });
+  }
+  if (!previous.has(targetKey)) return from;
+  let step = target;
+  let parent = previous.get(`${step.x},${step.y}`);
+  while (parent && `${parent.x},${parent.y}` !== startKey) { step = parent; parent = previous.get(`${step.x},${step.y}`); }
+  return step;
+}
+
 const mazeLayouts: MazeLayout[] = [
   {
     grid: ["########", "#......#", "#.##..##", "#....#.#", "#.#....#", "#......#", "########"],
@@ -74,22 +96,28 @@ export default function MazeRunPage() {
   const [mazeIndex, setMazeIndex] = useState(0);
   const maze = mazeLayouts[mazeIndex % mazeLayouts.length];
   const [playerPosition, setPlayerPosition] = useState<Position>(maze.start);
+  const [copPosition, setCopPosition] = useState<Position>(maze.goal);
   const [gameActive, setGameActive] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [caught, setCaught] = useState(false);
   const [status, setStatus] = useState("Start the run and reach the green exit.");
   const reward = 28 + Math.min(mazeIndex, mazeLayouts.length - 1) * 6;
 
   const startGame = () => {
     setPlayerPosition(maze.start);
+    setCopPosition(maze.goal);
     setGameActive(true);
     setFinished(false);
-    setStatus("Use the arrow keys to navigate the maze.");
+    setCaught(false);
+    setStatus("Reach the exit before the cop catches you.");
   };
   const nextLevel = () => {
     const nextIndex = (mazeIndex + 1) % mazeLayouts.length;
     setMazeIndex(nextIndex);
     setPlayerPosition(mazeLayouts[nextIndex].start);
+    setCopPosition(mazeLayouts[nextIndex].goal);
     setFinished(false);
+    setCaught(false);
     setStatus(`Maze ${nextIndex + 1} is ready. Press Start run when you are ready.`);
   };
 
@@ -110,23 +138,28 @@ export default function MazeRunPage() {
       const targetChar = maze.grid[nextPosition.y]?.[nextPosition.x];
       if (targetChar === "#") return;
 
-      setPlayerPosition((current) => {
-        const next = nextPosition!;
-        if (next.x === maze.goal.x && next.y === maze.goal.y) {
-          setGameActive(false);
-          addMoney(reward);
-          setStatus(`You reached the exit and earned $${reward}.`);
-          setFinished(true);
-          return current;
-        }
-
-        return next;
-      });
+      const next = nextPosition;
+      setPlayerPosition(next);
+      if (next.x === maze.goal.x && next.y === maze.goal.y) {
+        setGameActive(false);
+        addMoney(reward);
+        setStatus(`You reached the exit and earned $${reward}.`);
+        setFinished(true);
+        return;
+      }
+      const nextCop = nextChaserStep(maze.grid, copPosition, next);
+      setCopPosition(nextCop);
+      if (nextCop.x === next.x && nextCop.y === next.y) {
+        setGameActive(false);
+        setCaught(true);
+        setStatus("The cop caught you. Try again.");
+        setFinished(true);
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [addMoney, gameActive, maze.goal, maze.grid, playerPosition, reward]);
+  }, [addMoney, copPosition, gameActive, maze.goal, maze.grid, playerPosition, reward]);
 
   return (
     <main style={styles.page}>
@@ -150,10 +183,11 @@ export default function MazeRunPage() {
           {maze.grid.map((row, rowIndex) =>
             row.split("").map((cell, cellIndex) => {
               const isPlayer = playerPosition.x === cellIndex && playerPosition.y === rowIndex;
+              const isCop = copPosition.x === cellIndex && copPosition.y === rowIndex;
               const isGoal = maze.goal.x === cellIndex && maze.goal.y === rowIndex;
               return (
-                <div key={`${rowIndex}-${cellIndex}`} style={{ ...styles.tile, ...(cell === "#" ? styles.wallTile : styles.pathTile), ...(isPlayer ? styles.playerTile : {}), ...(isGoal ? styles.goalTile : {}) }}>
-                  {isPlayer ? "P" : isGoal ? "E" : ""}
+                <div key={`${rowIndex}-${cellIndex}`} style={{ ...styles.tile, ...(cell === "#" ? styles.wallTile : styles.pathTile), ...(isGoal ? styles.goalTile : {}), ...(isCop ? styles.copTile : {}), ...(isPlayer ? styles.playerTile : {}) }}>
+                  {isPlayer ? "P" : isCop ? "🚓" : isGoal ? "E" : ""}
                 </div>
               );
             }),
@@ -164,7 +198,7 @@ export default function MazeRunPage() {
           <button style={styles.button} onClick={startGame}>Start run</button>
           <p style={styles.status}>{status}</p>
         </div>
-        {finished && <div style={styles.resultOverlay} role="dialog" aria-modal="true"><div style={styles.resultCard}><p style={styles.resultEyebrow}>MAZE COMPLETE</p><h2 style={styles.resultTitle}>Exit Reached!</h2><p style={styles.resultText}>You earned ${reward}.</p><div style={styles.resultActions}><button style={styles.button} onClick={startGame}>Play again</button><button style={styles.nextButton} onClick={nextLevel}>Next level</button><Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link></div></div></div>}
+        {finished && <div style={styles.resultOverlay} role="dialog" aria-modal="true"><div style={styles.resultCard}><p style={styles.resultEyebrow}>{caught ? "RUN ENDED" : "MAZE COMPLETE"}</p><h2 style={styles.resultTitle}>{caught ? "Caught!" : "Exit Reached!"}</h2><p style={styles.resultText}>{caught ? "The cop caught up to you." : `You earned $${reward}.`}</p><div style={styles.resultActions}><button style={styles.button} onClick={startGame}>Play again</button>{!caught && <button style={styles.nextButton} onClick={nextLevel}>Next level</button>}<Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link></div></div></div>}
       </div>
     </main>
   );
@@ -255,6 +289,11 @@ const styles: Record<string, CSSProperties> = {
   playerTile: {
     background: "#f59e0b",
     color: "#07111b",
+  },
+  copTile: {
+    background: "#2563eb",
+    color: "#fff",
+    fontSize: "clamp(9px, 2vw, 16px)",
   },
   goalTile: {
     background: "#22c55e",
