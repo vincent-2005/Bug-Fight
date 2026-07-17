@@ -29,19 +29,32 @@ export default function DodgeDashPage() {
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [timeLeft, setTimeLeft] = useState(levels.easy.time);
   const [gameActive, setGameActive] = useState(false);
+  const [result, setResult] = useState<"survived" | "hit" | null>(null);
+  const [lastReward, setLastReward] = useState(0);
   const [status, setStatus] = useState("Start the run and survive the falling danger.");
   const playerXRef = useRef(playerX);
+  const deadlineRef = useRef(0);
+  const endedRef = useRef(false);
+  const levelRef = useRef(levels.easy);
+  const addMoneyRef = useRef(addMoney);
   const level = levels[difficulty];
 
   useEffect(() => {
     playerXRef.current = playerX;
   }, [playerX]);
 
+  useEffect(() => { levelRef.current = level; }, [level]);
+  useEffect(() => { addMoneyRef.current = addMoney; }, [addMoney]);
+
   const startGame = () => {
     setPlayerX(162);
     setBlocks([]);
     setTimeLeft(level.time);
+    deadlineRef.current = Date.now() + level.time * 1000;
+    endedRef.current = false;
     setGameActive(true);
+    setResult(null);
+    setLastReward(0);
     setStatus("Move left and right to dodge the blocks.");
   };
 
@@ -68,20 +81,22 @@ export default function DodgeDashPage() {
     if (!gameActive) return;
 
     const timer = window.setInterval(() => {
-      setTimeLeft((current) => {
-        if (current <= 1) {
-          window.clearInterval(timer);
-          setGameActive(false);
-          setStatus(`You survived ${level.label} and earned $${level.reward}.`);
-          addMoney(level.reward);
-          return 0;
-        }
-        return current - 1;
-      });
-    }, 1000);
+      if (endedRef.current) return;
+      const remaining = Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining === 0) {
+        const completedLevel = levelRef.current;
+        endedRef.current = true;
+        setGameActive(false);
+        setStatus(`You survived ${completedLevel.label} and earned $${completedLevel.reward}.`);
+        addMoneyRef.current(completedLevel.reward);
+        setLastReward(completedLevel.reward);
+        setResult("survived");
+      }
+    }, 100);
 
     return () => window.clearInterval(timer);
-  }, [addMoney, gameActive, level.label, level.reward]);
+  }, [gameActive]);
 
   useEffect(() => {
     if (!gameActive) return;
@@ -102,8 +117,11 @@ export default function DodgeDashPage() {
 
         if (hit) {
           window.clearInterval(gameLoop);
+          endedRef.current = true;
           setGameActive(false);
           setStatus("A block clipped you. Try again.");
+          setLastReward(0);
+          setResult("hit");
           return [];
         }
 
@@ -152,6 +170,21 @@ export default function DodgeDashPage() {
           <button style={styles.button} onClick={startGame}>Start run</button>
           <p style={styles.statusText}>{status}</p>
         </div>
+
+        {result && (
+          <div style={styles.resultOverlay} role="dialog" aria-modal="true" aria-labelledby="dodge-result-title">
+            <div style={styles.resultCard}>
+              <p style={styles.resultEyebrow}>DODGE DASH COMPLETE</p>
+              <h2 id="dodge-result-title" style={styles.resultTitle}>{result === "survived" ? "Run Complete!" : "Run Ended"}</h2>
+              <p style={styles.resultText}>{result === "survived" ? "You survived the block storm." : "A falling block caught you."}</p>
+              <p style={styles.resultReward}>+${lastReward}</p>
+              <div style={styles.resultActions}>
+                <button style={styles.button} onClick={startGame}>Play again</button>
+                <Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
@@ -292,4 +325,29 @@ const styles: Record<string, CSSProperties> = {
     color: "#c9daed",
     margin: 0,
   },
+  resultOverlay: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 10,
+    display: "grid",
+    placeItems: "center",
+    padding: 24,
+    background: "rgba(4, 7, 14, 0.74)",
+    backdropFilter: "blur(7px)",
+  },
+  resultCard: {
+    width: "min(390px, 100%)",
+    padding: 30,
+    borderRadius: 22,
+    textAlign: "center",
+    background: "linear-gradient(145deg, #2d1b4e, #11172d)",
+    border: "1px solid rgba(245,177,255,0.55)",
+    boxShadow: "0 28px 80px rgba(0,0,0,0.55)",
+  },
+  resultEyebrow: { margin: 0, color: "#f2bdff", fontSize: 11, fontWeight: 800, letterSpacing: "0.18em" },
+  resultTitle: { margin: "10px 0 8px", fontSize: "clamp(2rem, 8vw, 2.8rem)" },
+  resultText: { margin: 0, color: "#c9daed" },
+  resultReward: { margin: "18px 0", color: "#8fe4a7", fontSize: 28, fontWeight: 800 },
+  resultActions: { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" },
+  arcadeButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", color: "#f6fbff", textDecoration: "none", fontWeight: 700 },
 };
