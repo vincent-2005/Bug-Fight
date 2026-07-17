@@ -12,7 +12,7 @@ type Card = {
   label: string;
 };
 
-type Outcome = "ready" | "playing" | "finished";
+type Outcome = "ready" | "playing" | "revealing" | "finished";
 
 const suits = ["♠", "♥", "♦", "♣"];
 const CHIP_VALUE = 5;
@@ -111,6 +111,13 @@ export default function BlackjackPage() {
     setPhase("finished");
   };
 
+  const revealDealerThenFinish = (playerFinal: Card[], dealerFinal: Card[]) => {
+    setDealerHand(dealerFinal);
+    setPhase("revealing");
+    setStatus(`Dealer reveals ${getHandScore(dealerFinal)}. Checking the hand…`);
+    window.setTimeout(() => finishRound(playerFinal, dealerFinal), 900);
+  };
+
   const hit = () => {
     if (phase !== "playing" || deck.length === 0) return;
 
@@ -121,7 +128,7 @@ export default function BlackjackPage() {
     setPlayerHand(nextHand);
 
     if (getHandScore(nextHand) > 21) {
-      finishRound(nextHand, dealerHand);
+      revealDealerThenFinish(nextHand, dealerHand);
       return;
     }
 
@@ -141,7 +148,7 @@ export default function BlackjackPage() {
     }
 
     setDeck(remainingDeck);
-    finishRound(playerHand, dealerCards);
+    revealDealerThenFinish(playerHand, dealerCards);
   };
 
   const playerScore = getHandScore(playerHand);
@@ -179,7 +186,7 @@ export default function BlackjackPage() {
           <div style={styles.statBox}><strong>{chips}</strong><span>$5 chips</span></div>
           <div style={styles.statBox}><strong>${playerProgress.money}</strong><span>Wallet</span></div>
           <div style={styles.statBox}><strong>{phase === "playing" ? playerScore : "—"}</strong><span>Your hand</span></div>
-          <div style={styles.statBox}><strong>{phase === "playing" ? visibleDealerScore : phase === "finished" ? dealerScore : "—"}</strong><span>Dealer</span></div>
+          <div style={styles.statBox}><strong>{phase === "playing" ? visibleDealerScore : phase === "revealing" || phase === "finished" ? dealerScore : "—"}</strong><span>Dealer</span></div>
         </div>
 
         <div style={styles.bettingRow}>
@@ -194,7 +201,7 @@ export default function BlackjackPage() {
               style={styles.betInput}
             />
           </label>
-          <button style={styles.button} onClick={startRound} disabled={phase === "playing"}>Deal hand</button>
+          <button style={styles.button} onClick={startRound} disabled={phase === "playing" || phase === "revealing"}>Deal hand</button>
           <span style={styles.chipValue}>1 chip = a $5 bet · a win earns $5 per chip</span>
         </div>
 
