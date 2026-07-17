@@ -147,7 +147,8 @@ export default function BlackjackPage() {
 
   return (
     <main style={styles.page}>
-      <div style={styles.card}>
+      <div style={styles.card} className="casino-table">
+        <div className="casino-lights" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>
         <div style={styles.header}>
           <div>
             <p style={styles.eyebrow}>MINI-GAME</p>
@@ -182,7 +183,7 @@ export default function BlackjackPage() {
           <div style={styles.handBlock}>
             <h2 style={styles.handTitle}>Player</h2>
             <div style={styles.handRow}>
-              {playerHand.length === 0 ? <span style={styles.placeholder}>No cards yet</span> : playerHand.map((card, index) => <div key={`${card.label}-${index}`} style={styles.cardChip}>{card.label}</div>)}
+              {playerHand.length === 0 ? <span style={styles.placeholder}>No cards yet</span> : playerHand.map((card, index) => <div key={`${card.label}-${index}`} style={styles.cardChip} className="casino-card">{card.label}</div>)}
             </div>
           </div>
 
@@ -191,8 +192,8 @@ export default function BlackjackPage() {
             <div style={styles.handRow}>
               {dealerHand.length === 0 ? <span style={styles.placeholder}>No cards yet</span> : dealerHand.map((card, index) => (
                 phase === "playing" && index === 1
-                  ? <div key={`${card.label}-${index}`} style={styles.cardBack} aria-label="Dealer card face down">?</div>
-                  : <div key={`${card.label}-${index}`} style={styles.cardChip}>{card.label}</div>
+                  ? <div key={`${card.label}-${index}`} style={styles.cardBack} className="casino-card casino-card-back" aria-label="Dealer card face down">?</div>
+                  : <div key={`${card.label}-${index}`} style={styles.cardChip} className="casino-card">{card.label}</div>
               ))}
             </div>
           </div>

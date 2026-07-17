@@ -41,6 +41,7 @@ export default function HomeHub() {
     setProgress((current) => ({ ...current, tutorialCompleted: true }));
     setTutorialFinished(true);
     setShowTutorial(false);
+    router.push("/play");
   };
 
   const switchAccount = () => {

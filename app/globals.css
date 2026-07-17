@@ -4,3 +4,15 @@ html,
 body {
   min-height: 100%;
 }
+
+.casino-table { position: relative; overflow: hidden; }
+.casino-table::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 50%, transparent 34%, rgba(52, 255, 164, .06) 60%, transparent 72%); animation: casino-felt 3.6s ease-in-out infinite; }
+.casino-lights { position: absolute; inset: 11px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+.casino-lights i { width: 7px; height: 7px; border-radius: 50%; background: #ffe789; box-shadow: 0 0 9px #ffe789, 0 0 20px #ffae57; animation: casino-light 1.4s ease-in-out infinite alternate; }
+.casino-lights i:nth-child(2n) { animation-delay: .5s; }.casino-lights i:nth-child(3n) { animation-delay: 1s; }
+.casino-card { animation: casino-deal .28s ease-out both; transform-origin: bottom center; }
+.casino-card-back { animation: casino-flip .55s ease-in-out infinite alternate; }
+@keyframes casino-light { to { transform: scale(1.45); opacity: .55; } }
+@keyframes casino-felt { 50% { opacity: .45; transform: scale(1.03); } }
+@keyframes casino-deal { from { opacity: 0; transform: translateY(-22px) rotate(-6deg); } to { opacity: 1; transform: translateY(0) rotate(0); } }
+@keyframes casino-flip { to { transform: rotateY(11deg) translateY(-2px); } }

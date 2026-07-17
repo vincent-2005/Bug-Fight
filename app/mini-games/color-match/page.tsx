@@ -6,6 +6,12 @@ import type { CSSProperties } from "react";
 import { usePlayerProgress } from "@/components/bug-brawler/progress";
 
 const palette = ["#ef476f", "#f78c6b", "#ffd166", "#a7c957", "#48cae4", "#5e60ce", "#b565d9", "#e76f9a"];
+type Difficulty = "easy" | "medium" | "hard";
+const levels: Record<Difficulty, { label: string; tiles: number; matches: number; time: number; goal: number; shades: number[] }> = {
+  easy: { label: "Easy", tiles: 9, matches: 2, time: 16, goal: 8, shades: [-48, -31, -18, 17, 30, 45] },
+  medium: { label: "Medium", tiles: 16, matches: 1, time: 14, goal: 10, shades: [-33, -22, -13, 12, 21, 32] },
+  hard: { label: "Hard", tiles: 16, matches: 1, time: 11, goal: 12, shades: [-18, -11, -6, 6, 11, 18] },
+};
 
 function shade(hex: string, amount: number) {
   const value = Number.parseInt(hex.slice(1), 16);
@@ -13,12 +19,12 @@ function shade(hex: string, amount: number) {
   return `rgb(${channel(16)}, ${channel(8)}, ${channel(0)})`;
 }
 
-function createBoard(target: string) {
+function createBoard(target: string, level: (typeof levels)[Difficulty]) {
   const targetIndexes = new Set<number>();
-  while (targetIndexes.size < 2) targetIndexes.add(Math.floor(Math.random() * 9));
-  return Array.from({ length: 9 }, (_, index) => {
+  while (targetIndexes.size < level.matches) targetIndexes.add(Math.floor(Math.random() * level.tiles));
+  return Array.from({ length: level.tiles }, (_, index) => {
     if (targetIndexes.has(index)) return target;
-    const amount = [-48, -31, -18, 17, 30, 45][Math.floor(Math.random() * 6)];
+    const amount = level.shades[Math.floor(Math.random() * level.shades.length)];
     return shade(target, amount);
   });
 }
@@ -26,26 +32,28 @@ function createBoard(target: string) {
 export default function ColorMatchPage() {
   const { progress: playerProgress, addMoney } = usePlayerProgress();
   const [targetColor, setTargetColor] = useState(palette[0]);
+  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [board, setBoard] = useState<string[]>([]);
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(16);
+  const [timeLeft, setTimeLeft] = useState(levels.easy.time);
   const [gameActive, setGameActive] = useState(false);
   const [result, setResult] = useState<"time" | "perfect" | null>(null);
   const [lastReward, setLastReward] = useState(0);
   const [status, setStatus] = useState("Start the timer and smash the matching tiles.");
+  const level = levels[difficulty];
 
   const startGame = () => {
     const nextTarget = palette[Math.floor(Math.random() * palette.length)];
     setTargetColor(nextTarget);
-    setBoard(createBoard(nextTarget));
+    setBoard(createBoard(nextTarget, level));
     setHits(0);
     setMisses(0);
-    setTimeLeft(16);
+    setTimeLeft(level.time);
     setGameActive(true);
     setResult(null);
     setLastReward(0);
-    setStatus("Find either exact match. The other tiles are close, but not a match.");
+    setStatus(`Find ${level.matches === 1 ? "the one exact match" : "either exact match"} before time runs out.`);
   };
 
   useEffect(() => {
@@ -76,8 +84,8 @@ export default function ColorMatchPage() {
     if (board[index] === targetColor) {
       const nextHits = hits + 1;
       setHits(nextHits);
-      if (nextHits >= 8) {
-        const reward = 60 + nextHits * 10;
+      if (nextHits >= level.goal) {
+        const reward = 60 + nextHits * 10 + (difficulty === "hard" ? 50 : difficulty === "medium" ? 25 : 0);
         setGameActive(false);
         setStatus(`Perfect run! You earned $${reward}.`);
         addMoney(reward);
@@ -87,7 +95,7 @@ export default function ColorMatchPage() {
       }
       const nextTarget = palette[(palette.indexOf(targetColor) + nextHits) % palette.length];
       setTargetColor(nextTarget);
-      setBoard(createBoard(nextTarget));
+      setBoard(createBoard(nextTarget, level));
       setStatus("Nice hit! Another color is up.");
     } else {
       setMisses((current) => current + 1);
@@ -113,12 +121,21 @@ export default function ColorMatchPage() {
           <div style={styles.statBox}><strong>{timeLeft}s</strong><span>Time</span></div>
         </div>
 
+        <div style={styles.levelRow} aria-label="Choose difficulty">
+          {(Object.keys(levels) as Difficulty[]).map((option) => (
+            <button key={option} style={{ ...styles.levelButton, ...(difficulty === option ? styles.levelButtonActive : {}) }} onClick={() => !gameActive && setDifficulty(option)} disabled={gameActive}>
+              {levels[option].label}
+            </button>
+          ))}
+          <span style={styles.levelHint}>{level.tiles === 9 ? "3 × 3 · 2 matches" : `4 × 4 · ${level.matches} match`}</span>
+        </div>
+
         <div style={styles.targetCard}>
           <span style={styles.targetLabel}>Target color</span>
           <div style={{ ...styles.targetSwatch, backgroundColor: targetColor }} />
         </div>
 
-        <div style={styles.board}>
+        <div style={{ ...styles.board, gridTemplateColumns: `repeat(${level.tiles === 9 ? 3 : 4}, minmax(0, 1fr))` }}>
           {board.map((color, index) => (
             <button key={`${color}-${index}`} style={{ ...styles.tile, backgroundColor: color }} onClick={() => handleTileClick(index)} />
           ))}
@@ -225,6 +242,31 @@ const styles: Record<string, CSSProperties> = {
     height: 28,
     borderRadius: "50%",
     border: "3px solid #fff",
+  },
+  levelRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+    marginBottom: 16,
+  },
+  levelButton: {
+    border: "1px solid rgba(255,255,255,0.18)",
+    borderRadius: 999,
+    padding: "8px 12px",
+    background: "rgba(255,255,255,0.05)",
+    color: "#dce8f3",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  levelButtonActive: {
+    borderColor: "#f2bdff",
+    background: "rgba(242,189,255,0.18)",
+    color: "#fff6ff",
+  },
+  levelHint: {
+    color: "#9eb4c9",
+    fontSize: 12,
   },
   board: {
     display: "grid",

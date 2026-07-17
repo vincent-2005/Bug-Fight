@@ -14,7 +14,6 @@ type Block = {
 const PLAYFIELD_WIDTH = 360;
 const PLAYFIELD_HEIGHT = 320;
 const PLAYER_WIDTH = 36;
-const PLAYER_HEIGHT = 26;
 const BLOCK_SIZE = 28;
 
 export default function DodgeDashPage() {
@@ -205,8 +204,10 @@ const styles: Record<string, CSSProperties> = {
   },
   playfield: {
     position: "relative",
-    width: "100%",
+    width: PLAYFIELD_WIDTH,
+    maxWidth: "100%",
     height: 320,
+    margin: "0 auto",
     borderRadius: 20,
     border: "1px solid rgba(255,255,255,0.16)",
     background: "linear-gradient(180deg, #133959 0%, #09131d 100%)",

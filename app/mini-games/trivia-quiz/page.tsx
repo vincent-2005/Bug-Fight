@@ -83,6 +83,8 @@ export default function TriviaQuizPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [gameActive, setGameActive] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [reward, setReward] = useState(0);
   const [status, setStatus] = useState("Start a quiz run to earn cash.");
   const [shuffledOptions, setShuffledOptions] = useState<AnswerOption[]>(() =>
     questions[0].options.map((label, index) => ({ label, correct: index === questions[0].answer }))
@@ -91,6 +93,8 @@ export default function TriviaQuizPage() {
   const startGame = () => {
     setCurrentIndex(0);
     setScore(0);
+    setFinished(false);
+    setReward(0);
     setShuffledOptions(shuffleOptions(questions[0]));
     setGameActive(true);
     setStatus("Pick the correct answer for each round.");
@@ -105,11 +109,14 @@ export default function TriviaQuizPage() {
     if (currentIndex === questions.length - 1) {
       setGameActive(false);
       if (nextScore >= 7) {
-        addMoney(30);
-        setStatus(`You scored ${nextScore}/${questions.length} and earned $30.`);
+        const payout = 30 + (nextScore - 7) * 10;
+        addMoney(payout);
+        setReward(payout);
+        setStatus(`You scored ${nextScore}/${questions.length} and earned $${payout}.`);
       } else {
         setStatus(`You scored ${nextScore}/${questions.length}. Try another round.`);
       }
+      setFinished(true);
       return;
     }
 
@@ -154,6 +161,18 @@ export default function TriviaQuizPage() {
           <button style={styles.button} onClick={startGame}>Start quiz</button>
           <p style={styles.status}>{status}</p>
         </div>
+
+        {finished && (
+          <div style={styles.resultOverlay} role="dialog" aria-modal="true" aria-labelledby="trivia-result-title">
+            <div style={styles.resultCard}>
+              <p style={styles.resultEyebrow}>QUIZ COMPLETE</p>
+              <h2 id="trivia-result-title" style={styles.resultTitle}>{score >= 7 ? "Great Run!" : "Quiz Finished"}</h2>
+              <p style={styles.resultText}>You got {score} out of {questions.length} questions correct.</p>
+              <p style={styles.resultReward}>{reward > 0 ? `+$${reward}` : "Try again for a payout"}</p>
+              <button style={styles.button} onClick={startGame}>Play again</button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
@@ -264,4 +283,27 @@ const styles: Record<string, CSSProperties> = {
     margin: 0,
     color: "#c9daed",
   },
+  resultOverlay: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 10,
+    display: "grid",
+    placeItems: "center",
+    padding: 24,
+    background: "rgba(4, 7, 14, 0.74)",
+    backdropFilter: "blur(7px)",
+  },
+  resultCard: {
+    width: "min(390px, 100%)",
+    padding: 30,
+    borderRadius: 22,
+    textAlign: "center",
+    background: "linear-gradient(145deg, #173855, #10182b)",
+    border: "1px solid rgba(94,231,255,0.55)",
+    boxShadow: "0 28px 80px rgba(0,0,0,0.55)",
+  },
+  resultEyebrow: { margin: 0, color: "#8ee6ff", fontSize: 11, fontWeight: 800, letterSpacing: "0.18em" },
+  resultTitle: { margin: "10px 0 8px", fontSize: "clamp(2rem, 8vw, 2.8rem)" },
+  resultText: { margin: 0, color: "#c9daed" },
+  resultReward: { margin: "18px 0", color: "#8fe4a7", fontSize: 24, fontWeight: 800 },
 };
