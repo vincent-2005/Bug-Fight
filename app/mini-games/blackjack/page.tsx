@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { CSSProperties } from "react";
+import { usePlayerProgress } from "@/components/bug-brawler/progress";
 
 type Card = {
   suit: string;
@@ -14,6 +15,7 @@ type Card = {
 type Outcome = "ready" | "playing" | "finished";
 
 const suits = ["♠", "♥", "♦", "♣"];
+const CHIP_VALUE = 5;
 const values = [
   { value: "A", score: 11 },
   { value: "2", score: 2 },
@@ -51,6 +53,7 @@ function getHandScore(hand: Card[]) {
 }
 
 export default function BlackjackPage() {
+  const { progress: playerProgress, addMoney } = usePlayerProgress();
   const [playerHand, setPlayerHand] = useState<Card[]>([]);
   const [dealerHand, setDealerHand] = useState<Card[]>([]);
   const [deck, setDeck] = useState<Card[]>([]);
@@ -63,7 +66,7 @@ export default function BlackjackPage() {
   const startRound = () => {
     const safeBet = Math.max(1, Math.floor(bet || 0));
     if (safeBet > chips) {
-      setStatus("You do not have enough chips for that bet.");
+      setStatus(`You need ${safeBet} chip${safeBet === 1 ? "" : "s"} to place that bet.`);
       return;
     }
 
@@ -95,7 +98,8 @@ export default function BlackjackPage() {
 
     if (outcome === "win") {
       setChips((current) => current + roundBet * 2);
-      setStatus(`You win! Your ${roundBet} chip stake doubles to ${roundBet * 2} chips.`);
+      addMoney(roundBet * CHIP_VALUE);
+      setStatus(`You win! ${roundBet} chip${roundBet === 1 ? "" : "s"} earn $${roundBet * CHIP_VALUE}.`);
     } else if (outcome === "push") {
       setChips((current) => current + roundBet);
       setStatus("Push. The hand is a tie and your stake is returned.");
@@ -143,6 +147,20 @@ export default function BlackjackPage() {
   const playerScore = getHandScore(playerHand);
   const dealerScore = getHandScore(dealerHand);
   const visibleDealerScore = getHandScore(dealerHand.slice(0, 1));
+  const changeBet = (nextBet: number) => {
+    const safeBet = Math.max(1, Math.floor(nextBet || 1));
+    if (phase !== "playing") { setBet(safeBet); return; }
+    const difference = safeBet - roundBet;
+    if (difference > 0 && difference > chips) {
+      setStatus(`You need ${difference} more chip${difference === 1 ? "" : "s"} to raise the bet.`);
+      return;
+    }
+    if (difference !== 0) {
+      setChips((current) => current - difference);
+      setRoundBet(safeBet);
+    }
+    setBet(safeBet);
+  };
 
   return (
     <main style={styles.page}>
@@ -158,7 +176,8 @@ export default function BlackjackPage() {
         </div>
 
         <div style={styles.statsRow}>
-          <div style={styles.statBox}><strong>{chips}</strong><span>One-dollar chips</span></div>
+          <div style={styles.statBox}><strong>{chips}</strong><span>$5 chips</span></div>
+          <div style={styles.statBox}><strong>${playerProgress.money}</strong><span>Wallet</span></div>
           <div style={styles.statBox}><strong>{phase === "playing" ? playerScore : "—"}</strong><span>Your hand</span></div>
           <div style={styles.statBox}><strong>{phase === "playing" ? visibleDealerScore : phase === "finished" ? dealerScore : "—"}</strong><span>Dealer</span></div>
         </div>
@@ -169,14 +188,14 @@ export default function BlackjackPage() {
             <input
               type="number"
               min="1"
-              max={chips}
+              max={phase === "playing" ? chips + roundBet : chips}
               value={bet}
-              onChange={(event) => setBet(Number(event.target.value) || 1)}
-              disabled={phase === "playing"}
+              onChange={(event) => changeBet(Number(event.target.value) || 1)}
               style={styles.betInput}
             />
           </label>
-          <button style={styles.button} onClick={startRound}>Deal hand</button>
+          <button style={styles.button} onClick={startRound} disabled={phase === "playing"}>Deal hand</button>
+          <span style={styles.chipValue}>1 chip = a $5 bet · a win earns $5 per chip</span>
         </div>
 
         <div style={styles.table}>
@@ -207,6 +226,8 @@ export default function BlackjackPage() {
           <button style={styles.secondaryButton} onClick={hit} disabled={phase !== "playing"}>Hit</button>
           <button style={styles.secondaryButton} onClick={stand} disabled={phase !== "playing"}>Stand</button>
         </div>
+
+        {phase === "finished" && <div style={styles.resultOverlay} role="dialog" aria-modal="true"><div style={styles.resultCard}><p style={styles.resultEyebrow}>HAND COMPLETE</p><h2 style={styles.resultTitle}>Table Result</h2><p style={styles.resultText}>{status}</p><div style={styles.resultActions}><button style={styles.button} onClick={startRound}>Play again</button><Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link></div></div></div>}
       </div>
     </main>
   );
@@ -296,6 +317,10 @@ const styles: Record<string, CSSProperties> = {
     background: "rgba(255,255,255,0.08)",
     color: "#f6fbff",
   },
+  chipValue: {
+    color: "#a8c8b2",
+    fontSize: 12,
+  },
   table: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
@@ -383,4 +408,11 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 700,
     cursor: "pointer",
   },
+  resultOverlay: { position: "fixed", inset: 0, zIndex: 10, display: "grid", placeItems: "center", padding: 24, background: "rgba(4, 12, 8, 0.74)", backdropFilter: "blur(7px)" },
+  resultCard: { width: "min(390px, 100%)", padding: 30, borderRadius: 22, textAlign: "center", background: "linear-gradient(145deg, #183f2b, #101b16)", border: "1px solid rgba(255, 231, 137, 0.55)", boxShadow: "0 28px 80px rgba(0,0,0,0.55)" },
+  resultEyebrow: { margin: 0, color: "#ffe789", fontSize: 11, fontWeight: 800, letterSpacing: "0.18em" },
+  resultTitle: { margin: "10px 0 8px", fontSize: "clamp(2rem, 8vw, 2.8rem)" },
+  resultText: { margin: "0 0 18px", color: "#dce8f3" },
+  resultActions: { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" },
+  arcadeButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", color: "#f6fbff", textDecoration: "none", fontWeight: 700 },
 };

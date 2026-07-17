@@ -48,6 +48,7 @@ export default function CoinCollectorPage() {
   const [coins, setCoins] = useState<Coin[]>([]);
   const [score, setScore] = useState(0);
   const [gameActive, setGameActive] = useState(false);
+  const [finished, setFinished] = useState(false);
   const [status, setStatus] = useState("Start the round to collect 8 coins.");
 
   const startGame = () => {
@@ -56,6 +57,7 @@ export default function CoinCollectorPage() {
     setCoins(Array.from({ length: 8 }, () => makeCoin([], startPosition)));
     setScore(0);
     setGameActive(true);
+    setFinished(false);
     setStatus("Collect 8 coins without leaving the arena.");
   };
 
@@ -87,6 +89,7 @@ export default function CoinCollectorPage() {
             setGameActive(false);
             setStatus("You cleared the coin run and earned cash.");
             addMoney(35);
+            setFinished(true);
             return [];
           }
 
@@ -130,6 +133,7 @@ export default function CoinCollectorPage() {
           <button style={styles.button} onClick={startGame}>Start round</button>
           <p style={styles.statusText}>{status}</p>
         </div>
+        {finished && <div style={styles.resultOverlay} role="dialog" aria-modal="true"><div style={styles.resultCard}><p style={styles.resultEyebrow}>COIN RUN COMPLETE</p><h2 style={styles.resultTitle}>All Coins Collected!</h2><p style={styles.resultText}>You earned $35.</p><div style={styles.resultActions}><button style={styles.button} onClick={startGame}>Play again</button><Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link></div></div></div>}
       </div>
     </main>
   );
@@ -244,4 +248,11 @@ const styles: Record<string, CSSProperties> = {
     color: "#c9daed",
     margin: 0,
   },
+  resultOverlay: { position: "fixed", inset: 0, zIndex: 10, display: "grid", placeItems: "center", padding: 24, background: "rgba(4, 7, 14, 0.74)", backdropFilter: "blur(7px)" },
+  resultCard: { width: "min(390px, 100%)", padding: 30, borderRadius: 22, textAlign: "center", background: "linear-gradient(145deg, #173b52, #10182b)", border: "1px solid rgba(94,231,255,0.55)", boxShadow: "0 28px 80px rgba(0,0,0,0.55)" },
+  resultEyebrow: { margin: 0, color: "#8ee6ff", fontSize: 11, fontWeight: 800, letterSpacing: "0.18em" },
+  resultTitle: { margin: "10px 0 8px", fontSize: "clamp(2rem, 8vw, 2.8rem)" },
+  resultText: { margin: "0 0 18px", color: "#c9daed" },
+  resultActions: { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" },
+  arcadeButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", color: "#f6fbff", textDecoration: "none", fontWeight: 700 },
 };

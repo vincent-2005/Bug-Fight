@@ -51,20 +51,18 @@ const mazeLayouts: MazeLayout[] = [
 
 export default function MazeRunPage() {
   const { progress: playerProgress, addMoney } = usePlayerProgress();
-  const [mazeIndex, setMazeIndex] = useState(0);
+  const mazeIndex = 0;
   const maze = mazeLayouts[mazeIndex % mazeLayouts.length];
   const [playerPosition, setPlayerPosition] = useState<Position>(maze.start);
   const [gameActive, setGameActive] = useState(false);
+  const [finished, setFinished] = useState(false);
   const [status, setStatus] = useState("Start the run and reach the green exit.");
   const reward = 28 + Math.min(mazeIndex, 6) * 6;
-
-  useEffect(() => {
-    setPlayerPosition(maze.start);
-  }, [maze.start]);
 
   const startGame = () => {
     setPlayerPosition(maze.start);
     setGameActive(true);
+    setFinished(false);
     setStatus("Use the arrow keys to navigate the maze.");
   };
 
@@ -90,8 +88,8 @@ export default function MazeRunPage() {
         if (next.x === maze.goal.x && next.y === maze.goal.y) {
           setGameActive(false);
           addMoney(reward);
-          setMazeIndex((currentIndex) => currentIndex + 1);
-          setStatus(`You reached the exit and earned $${reward}. The maze changed!`);
+          setStatus(`You reached the exit and earned $${reward}.`);
+          setFinished(true);
           return current;
         }
 
@@ -139,6 +137,7 @@ export default function MazeRunPage() {
           <button style={styles.button} onClick={startGame}>Start run</button>
           <p style={styles.status}>{status}</p>
         </div>
+        {finished && <div style={styles.resultOverlay} role="dialog" aria-modal="true"><div style={styles.resultCard}><p style={styles.resultEyebrow}>MAZE COMPLETE</p><h2 style={styles.resultTitle}>Exit Reached!</h2><p style={styles.resultText}>You earned ${reward}.</p><div style={styles.resultActions}><button style={styles.button} onClick={startGame}>Play again</button><Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link></div></div></div>}
       </div>
     </main>
   );
@@ -254,4 +253,11 @@ const styles: Record<string, CSSProperties> = {
     margin: 0,
     color: "#c9daed",
   },
+  resultOverlay: { position: "fixed", inset: 0, zIndex: 10, display: "grid", placeItems: "center", padding: 24, background: "rgba(4, 7, 14, 0.74)", backdropFilter: "blur(7px)" },
+  resultCard: { width: "min(390px, 100%)", padding: 30, borderRadius: 22, textAlign: "center", background: "linear-gradient(145deg, #2e3a4d, #10182b)", border: "1px solid rgba(94,231,255,0.55)", boxShadow: "0 28px 80px rgba(0,0,0,0.55)" },
+  resultEyebrow: { margin: 0, color: "#8ee6ff", fontSize: 11, fontWeight: 800, letterSpacing: "0.18em" },
+  resultTitle: { margin: "10px 0 8px", fontSize: "clamp(2rem, 8vw, 2.8rem)" },
+  resultText: { margin: "0 0 18px", color: "#c9daed" },
+  resultActions: { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" },
+  arcadeButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", color: "#f6fbff", textDecoration: "none", fontWeight: 700 },
 };

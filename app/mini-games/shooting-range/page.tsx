@@ -27,6 +27,7 @@ export default function ShootingRangePage() {
   const [sessionCash, setSessionCash] = useState(0);
   const [cooldown, setCooldown] = useState(0);
   const [flash, setFlash] = useState(0);
+  const [finished, setFinished] = useState(false);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -62,7 +63,7 @@ export default function ShootingRangePage() {
   const hitTarget = (id: number) => {
     if (cooldown > 0) return;
     setTargets((current) => current.map((target) => (target.id === id ? { ...target, alive: false } : target)));
-    setHits((current) => current + 1);
+    setHits((current) => { const next = current + 1; if (next >= initialTargets.length) setFinished(true); return next; });
     setSessionCash((current) => current + 12);
     setCooldown(4);
     setFlash(3);
@@ -81,6 +82,7 @@ export default function ShootingRangePage() {
     setHits(0);
     setMisses(0);
     setSessionCash(0);
+    setFinished(false);
   };
 
   const completion = useMemo(() => {
@@ -139,6 +141,7 @@ export default function ShootingRangePage() {
           <p style={styles.footerText}>Session cash earned: ${sessionCash} · Reload: {cooldown}s</p>
           <button style={styles.resetButton} onClick={resetRange}>Reset Range</button>
         </div>
+        {finished && <div style={styles.resultOverlay} role="dialog" aria-modal="true"><div style={styles.resultCard}><p style={styles.resultEyebrow}>RANGE COMPLETE</p><h2 style={styles.resultTitle}>All Targets Down!</h2><p style={styles.resultText}>You earned ${sessionCash} this session.</p><div style={styles.resultActions}><button style={styles.resetButton} onClick={resetRange}>Play again</button><Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link></div></div></div>}
       </div>
     </main>
   );
@@ -278,4 +281,11 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 800,
     cursor: "pointer",
   },
+  resultOverlay: { position: "fixed", inset: 0, zIndex: 10, display: "grid", placeItems: "center", padding: 24, background: "rgba(4, 7, 14, 0.74)", backdropFilter: "blur(7px)" },
+  resultCard: { width: "min(390px, 100%)", padding: 30, borderRadius: 22, textAlign: "center", background: "linear-gradient(145deg, #173855, #10182b)", border: "1px solid rgba(94,231,255,0.55)", boxShadow: "0 28px 80px rgba(0,0,0,0.55)" },
+  resultEyebrow: { margin: 0, color: "#8ee6ff", fontSize: 11, fontWeight: 800, letterSpacing: "0.18em" },
+  resultTitle: { margin: "10px 0 8px", fontSize: "clamp(2rem, 8vw, 2.8rem)" },
+  resultText: { margin: "0 0 18px", color: "#c9daed" },
+  resultActions: { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" },
+  arcadeButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", color: "#f6fbff", textDecoration: "none", fontWeight: 700 },
 };
