@@ -47,23 +47,50 @@ const mazeLayouts: MazeLayout[] = [
     start: { x: 1, y: 1 },
     goal: { x: 14, y: 13 },
   },
+  {
+    grid: ["##################", "#................#", "################.#", "#................#", "#.################", "#................#", "################.#", "#................#", "#.################", "#................#", "################.#", "#................#", "##################"],
+    start: { x: 1, y: 1 },
+    goal: { x: 16, y: 11 },
+  },
+  {
+    grid: ["####################", "#..................#", "#.##################", "#..................#", "##################.#", "#..................#", "#.##################", "#..................#", "##################.#", "#..................#", "#.##################", "#..................#", "##################.#", "#..................#", "####################"],
+    start: { x: 1, y: 1 },
+    goal: { x: 18, y: 13 },
+  },
+  {
+    grid: ["####################", "#..................#", "##################.#", "#..................#", "#.##################", "#..................#", "##################.#", "#..................#", "#.##################", "#..................#", "##################.#", "#..................#", "#.##################", "#..................#", "####################"],
+    start: { x: 1, y: 1 },
+    goal: { x: 18, y: 13 },
+  },
+  {
+    grid: ["######################", "#....................#", "#.####################", "#....................#", "####################.#", "#....................#", "#.####################", "#....................#", "####################.#", "#....................#", "#.####################", "#....................#", "####################.#", "#....................#", "#.####################", "#....................#", "######################"],
+    start: { x: 1, y: 1 },
+    goal: { x: 20, y: 15 },
+  },
 ];
 
 export default function MazeRunPage() {
   const { progress: playerProgress, addMoney } = usePlayerProgress();
-  const mazeIndex = 0;
+  const [mazeIndex, setMazeIndex] = useState(0);
   const maze = mazeLayouts[mazeIndex % mazeLayouts.length];
   const [playerPosition, setPlayerPosition] = useState<Position>(maze.start);
   const [gameActive, setGameActive] = useState(false);
   const [finished, setFinished] = useState(false);
   const [status, setStatus] = useState("Start the run and reach the green exit.");
-  const reward = 28 + Math.min(mazeIndex, 6) * 6;
+  const reward = 28 + Math.min(mazeIndex, mazeLayouts.length - 1) * 6;
 
   const startGame = () => {
     setPlayerPosition(maze.start);
     setGameActive(true);
     setFinished(false);
     setStatus("Use the arrow keys to navigate the maze.");
+  };
+  const nextLevel = () => {
+    const nextIndex = (mazeIndex + 1) % mazeLayouts.length;
+    setMazeIndex(nextIndex);
+    setPlayerPosition(mazeLayouts[nextIndex].start);
+    setFinished(false);
+    setStatus(`Maze ${nextIndex + 1} is ready. Press Start run when you are ready.`);
   };
 
   useEffect(() => {
@@ -137,7 +164,7 @@ export default function MazeRunPage() {
           <button style={styles.button} onClick={startGame}>Start run</button>
           <p style={styles.status}>{status}</p>
         </div>
-        {finished && <div style={styles.resultOverlay} role="dialog" aria-modal="true"><div style={styles.resultCard}><p style={styles.resultEyebrow}>MAZE COMPLETE</p><h2 style={styles.resultTitle}>Exit Reached!</h2><p style={styles.resultText}>You earned ${reward}.</p><div style={styles.resultActions}><button style={styles.button} onClick={startGame}>Play again</button><Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link></div></div></div>}
+        {finished && <div style={styles.resultOverlay} role="dialog" aria-modal="true"><div style={styles.resultCard}><p style={styles.resultEyebrow}>MAZE COMPLETE</p><h2 style={styles.resultTitle}>Exit Reached!</h2><p style={styles.resultText}>You earned ${reward}.</p><div style={styles.resultActions}><button style={styles.button} onClick={startGame}>Play again</button><button style={styles.nextButton} onClick={nextLevel}>Next level</button><Link href="/mini-games" style={styles.arcadeButton}>Return to arcade</Link></div></div></div>}
       </div>
     </main>
   );
@@ -259,5 +286,6 @@ const styles: Record<string, CSSProperties> = {
   resultTitle: { margin: "10px 0 8px", fontSize: "clamp(2rem, 8vw, 2.8rem)" },
   resultText: { margin: "0 0 18px", color: "#c9daed" },
   resultActions: { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" },
+  nextButton: { border: "1px solid rgba(94,231,255,0.55)", borderRadius: 999, padding: "12px 16px", background: "rgba(94,231,255,0.12)", color: "#e2fbff", fontWeight: 700, cursor: "pointer" },
   arcadeButton: { border: "1px solid rgba(255,255,255,0.22)", borderRadius: 999, padding: "12px 16px", color: "#f6fbff", textDecoration: "none", fontWeight: 700 },
 };

@@ -203,8 +203,10 @@ const styles: Record<string, CSSProperties> = {
   },
   playfield: {
     position: "relative",
-    width: "100%",
+    width: PLAYFIELD_WIDTH,
+    maxWidth: "100%",
     height: 320,
+    margin: "0 auto",
     borderRadius: 20,
     border: "1px solid rgba(255,255,255,0.16)",
     background: "linear-gradient(180deg, #12334b 0%, #09131d 100%)",
